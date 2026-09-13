@@ -11,7 +11,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem('peak-leads-theme');document.documentElement.dataset.theme=t==='light'||t==='dark'?t:'system'}catch{}` }} />
+      </head>
       <body>{children}</body>
     </html>
   );

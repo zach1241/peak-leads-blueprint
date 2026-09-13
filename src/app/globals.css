@@ -1,15 +1,36 @@
 @import "tailwindcss";
 :root {
-  --background: #f8f9fb;
-  --surface: #fff;
-  --sidebar: #f2f4f6;
-  --foreground: #202b35;
-  --muted: #65727e;
-  --border: #e2e6eb;
-  --accent: #286f5d;
-  --accent-soft: #e5f0eb;
-  --danger: #ac3737;
-  --shadow: 0 12px 36px #1e293b12;
+  --brand-blue: #2F80ED;
+  --brand-blue-strong: #1F6FEB;
+  --brand-blue-soft: #EAF3FF;
+  --brand-navy: #172033;
+  --brand-slate: #445066;
+  --brand-bg: #F7FAFC;
+  --brand-surface: #FFFFFF;
+  --brand-gold: #F6C343;
+  --dark-bg: #0B1220;
+  --dark-surface: #111827;
+  --dark-surface-2: #172033;
+  --dark-border: #253247;
+  --dark-text: #F8FAFC;
+  --dark-muted: #A7B3C6;
+  --dark-soft: #142B49;
+  --background: var(--brand-bg);
+  --surface: var(--brand-surface);
+  --sidebar: #F0F5FB;
+  --foreground: var(--brand-navy);
+  --muted: var(--brand-slate);
+  --border: #DCE5F0;
+  --accent: var(--brand-blue-strong);
+  --accent-soft: var(--brand-blue-soft);
+  --button-bg: var(--brand-blue-strong);
+  --button-hover: #185AC2;
+  --button-text: var(--brand-surface);
+  --focus: var(--brand-blue);
+  --danger: #AC3737;
+  --shadow: 0 12px 36px #17203312;
+  --card-shadow: 0 3px 10px #17203305;
+  --overlay: #0B122080;
   color-scheme: light;
 }
 @theme inline {
@@ -51,7 +72,7 @@ summary {
   outline-offset: 4px;
 }
 *:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--focus);
 }
 h1,
 h2,
@@ -96,17 +117,12 @@ h3 {
   margin-top: 1px;
 }
 .brand-mark {
-  display: grid;
-  place-items: center;
+  display: block;
   width: 35px;
   height: 35px;
+  flex-shrink: 0;
   border-radius: 9px;
-  background: var(--accent);
-  color: #fff;
-}
-.brand-mark svg {
-  width: 25px;
-  height: 25px;
+  object-fit: contain;
 }
 .app-shell {
   min-height: 100dvh;
@@ -518,11 +534,11 @@ h3 {
   font-weight: 600;
 }
 .primary {
-  background: var(--accent);
-  color: #fff;
+  background: var(--button-bg);
+  color: var(--button-text);
 }
 .primary:hover {
-  filter: brightness(0.94);
+  background: var(--button-hover);
 }
 .secondary {
   background: var(--surface);
@@ -545,7 +561,7 @@ h3 {
   max-width: 440px;
   margin: auto;
   padding: 39px;
-  box-shadow: 0 3px 10px #00000003;
+  box-shadow: var(--card-shadow);
 }
 .auth-card h1 {
   font-size: 28px;
@@ -657,7 +673,7 @@ h3 {
   margin: 0;
 }
 .mobile-dialog::backdrop {
-  background: #11182770;
+  background: var(--overlay);
 }
 .mobile-panel {
   padding: 25px 16px;
@@ -802,24 +818,34 @@ h3 {
   }
 }
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #171c20;
-    --surface: #1d2328;
-    --sidebar: #191f24;
-    --foreground: #e2e8ec;
-    --muted: #9aa7b1;
-    --border: #303a42;
-    --accent: #8fcbb4;
-    --accent-soft: #243e34;
-    --danger: #f29999;
+  :root:not([data-theme="light"]) {
+    --background: var(--dark-bg);
+    --surface: var(--dark-surface);
+    --sidebar: var(--dark-surface-2);
+    --foreground: var(--dark-text);
+    --muted: var(--dark-muted);
+    --border: var(--dark-border);
+    --accent: var(--brand-blue);
+    --accent-soft: var(--dark-soft);
+    --danger: #F29999;
     --shadow: 0 12px 36px #0004;
+    --card-shadow: none;
     color-scheme: dark;
   }
-  .primary,
-  .brand-mark {
-    background: #397d66;
-    color: #fff;
-  }
+}
+:root[data-theme="dark"] {
+    --background: var(--dark-bg);
+    --surface: var(--dark-surface);
+    --sidebar: var(--dark-surface-2);
+    --foreground: var(--dark-text);
+    --muted: var(--dark-muted);
+    --border: var(--dark-border);
+    --accent: var(--brand-blue);
+    --accent-soft: var(--dark-soft);
+    --danger: #F29999;
+    --shadow: 0 12px 36px #0004;
+    --card-shadow: none;
+    color-scheme: dark;
 }
 /* Phase 2 work surfaces share the original visual tokens. */
 .form-panel {
@@ -1253,4 +1279,22 @@ h3 {
     width: 100%;
     min-width: 0;
   }
+}
+
+.theme-control {
+  display: grid;
+  gap: 6px;
+  padding: 10px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.theme-control select {
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--background);
+  color: var(--foreground);
+  font: inherit;
 }

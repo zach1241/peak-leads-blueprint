@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { logout } from "@/app/actions";
 import { navigation } from "@/lib/navigation";
 import { Brand } from "./brand";
+import { ThemeControl } from "./theme-control";
 import { Icon } from "./icon";
 export function AppShell({
   children,
@@ -102,6 +103,7 @@ export function AppShell({
               <small>SIGNED IN AS</small>
               <p>{email}</p>
               <Link href="/settings">Account settings</Link>
+              <ThemeControl />
               <form action={action}>
                 <button disabled={pending}>
                   {pending ? "Signing out…" : "Sign out"}
