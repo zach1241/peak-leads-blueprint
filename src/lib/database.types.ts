@@ -34,6 +34,89 @@ export type Database = {
   }
   public: {
     Tables: {
+      sops: {
+        Row: {
+          id: string
+          organization_id: string
+          title: string
+          description: string
+          image_path: string | null
+          created_by: string
+          created_at: string
+          updated_at: string
+          resource_url: string
+          resource_type: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          title: string
+          description?: string
+          image_path?: string | null
+          created_by: string
+          created_at?: string
+          updated_at?: string
+          resource_url: string
+          resource_type: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          title?: string
+          description?: string
+          image_path?: string | null
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+          resource_url?: string
+          resource_type?: string
+        }
+        Relationships: [
+          { foreignKeyName: "sops_organization_id_fkey"; columns: ["organization_id"]; isOneToOne: false; referencedRelation: "organizations"; referencedColumns: ["id"] },
+          { foreignKeyName: "sops_created_by_fkey"; columns: ["created_by"]; isOneToOne: false; referencedRelation: "profiles"; referencedColumns: ["id"] },
+        ]
+      }
+
+      help_requests: {
+        Row: {
+          id: string
+          organization_id: string
+          title: string
+          description: string
+          image_path: string | null
+          requester_id: string
+          created_at: string
+          updated_at: string
+          status: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          title: string
+          description: string
+          image_path?: string | null
+          requester_id: string
+          created_at?: string
+          updated_at?: string
+          status?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          title?: string
+          description?: string
+          image_path?: string | null
+          requester_id?: string
+          created_at?: string
+          updated_at?: string
+          status?: string
+        }
+        Relationships: [
+          { foreignKeyName: "help_requests_organization_id_fkey"; columns: ["organization_id"]; isOneToOne: false; referencedRelation: "organizations"; referencedColumns: ["id"] },
+          { foreignKeyName: "help_requests_requester_id_fkey"; columns: ["requester_id"]; isOneToOne: false; referencedRelation: "profiles"; referencedColumns: ["id"] },
+        ]
+      }
+
       activity_logs: {
         Row: {
           action: string

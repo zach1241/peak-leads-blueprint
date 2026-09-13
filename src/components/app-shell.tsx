@@ -1,5 +1,5 @@
 "use client";
-import { useActionState, useRef } from "react";
+import { useActionState, useRef, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/app/actions";
@@ -15,6 +15,7 @@ export function AppShell({
   fullName,
   avatarUrl,
   avatarUpdatedAt,
+  helpCount,
 }: {
   children: React.ReactNode;
   email: string;
@@ -22,8 +23,19 @@ export function AppShell({
   fullName?: string;
   avatarUrl?: string;
   avatarUpdatedAt?: string;
+  helpCount: number | null;
 }) {
   const pathname = usePathname();
+  const [navigationHelp, setNavigationHelp] = useState<{ pathname: string; initial: number | null; count: number | null }>();
+  const unresolvedHelp = navigationHelp?.pathname === pathname && navigationHelp.initial === helpCount ? navigationHelp.count : helpCount;
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/help-count", { cache: "no-store", signal: controller.signal })
+      .then(async response => { if (!response.ok) throw new Error("Count unavailable"); return response.json(); })
+      .then((data: { count: number }) => setNavigationHelp({ pathname, initial: helpCount, count: data.count }))
+      .catch(() => { if (!controller.signal.aborted) setNavigationHelp({ pathname, initial: helpCount, count: null }); });
+    return () => controller.abort();
+  }, [pathname, helpCount]);
   const dialog = useRef<HTMLDialogElement>(null);
   const [state, action, pending] = useActionState(logout, {});
   const current =
@@ -43,6 +55,7 @@ export function AppShell({
         >
           <Icon name={item.icon} />
           {item.label}
+          {item.href === "/help-requests" && (unresolvedHelp === null ? <span className="help-count-unavailable" title="Help count unavailable">?</span> : unresolvedHelp > 0 ? <span className="help-count" aria-label={`${unresolvedHelp} unresolved help requests`}>{unresolvedHelp}</span> : null)}
         </Link>
       ))}
     </nav>

@@ -4,6 +4,8 @@ export const navigation = [
   { href: "/tasks", label: "Tasks", icon: "tasks" },
   { href: "/delivery", label: "Service Delivery", icon: "tasks" },
   { href: "/projects", label: "Projects", icon: "projects" },
+  { href: "/sops", label: "SOPs", icon: "projects" },
+  { href: "/help-requests", label: "Help Requests", icon: "team" },
   { href: "/team", label: "Team", icon: "team" },
   { href: "/activity", label: "Activity", icon: "activity" },
   { href: "/settings", label: "Settings", icon: "settings" },

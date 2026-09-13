@@ -1317,3 +1317,27 @@ h3 {
 .chart-dot { width: .65rem; height: .65rem; border-radius: 50%; background: var(--status-color); }
 .chart-total { fill: var(--foreground); font-size: 26px; font-weight: 700; }
 .chart-caption { fill: var(--muted); font-size: 10px; }
+
+.resource-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 1.25rem; }
+.resource-card { padding: 1.25rem; display: flex; flex-direction: column; align-items: stretch; gap: .75rem; min-width: 0; }
+.resource-card h2, .resource-card p { margin: 0; }
+.resource-message { white-space: pre-wrap; overflow-wrap: anywhere; }
+.resource-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-top: auto; }
+.resource-thumbnail { position: relative; display: block; width: 100%; max-width: 560px; aspect-ratio: 16 / 9; border: 1px solid var(--border); border-radius: 8px; background: var(--background); padding: 0; overflow: hidden; cursor: zoom-in; }
+.resource-thumbnail img { object-fit: contain; }
+.resource-lightbox { padding: 1rem; width: min(95vw, 1200px); max-width: 95vw; max-height: 95dvh; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--foreground); overflow: auto; }
+.resource-lightbox::backdrop { background: var(--overlay); }
+.resource-lightbox > button { display: block; margin-left: auto; }
+.resource-full-image { position: relative; width: 100%; height: min(75dvh, 900px); margin-top: .75rem; }
+.resource-full-image img { object-fit: contain; }
+body:has(.resource-lightbox[open]) { overflow: hidden; }
+.help-count { margin-left: auto; padding: 1px 6px; min-width: 20px; border-radius: 12px; background: var(--danger); color: var(--surface); font-size: 11px; text-align: center; }
+.help-count-unavailable { margin-left: auto; color: var(--muted); }
+.help-unresolved { border-left: 3px solid var(--accent); }
+.record-list small { display: block; color: var(--muted); font-size: 12px; }
+.badge-open { color: var(--accent); background: var(--accent-soft); }
+.badge-resolved { color: var(--muted); background: var(--background); }
+.burndown-chart { padding: 0 1.5rem 1.5rem; }
+.burndown-chart svg { width: 100%; max-height: 300px; }
+.burndown-chart text { fill: var(--muted); font-size: 12px; }
+.burndown-actual { color: var(--brand-blue); }

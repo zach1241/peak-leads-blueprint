@@ -11,6 +11,7 @@ export default async function ApplicationLayout({
   const selected = (await cookies()).get("peak-workspace")?.value;
   const organization =
     organizations.find((o) => o.id === selected) ?? organizations[0];
+  const help = organization ? await db.from("help_requests").select("id", { count: "exact", head: true }).eq("organization_id", organization.id).neq("status", "resolved") : null;
   return (
     <AppShell
       email={user.email ?? "Team member"}
@@ -18,6 +19,7 @@ export default async function ApplicationLayout({
       fullName={profile?.full_name ?? undefined}
       avatarUrl={profile?.avatar_url ?? undefined}
       avatarUpdatedAt={profile?.updated_at}
+      helpCount={help?.error ? null : help?.count ?? 0}
     >
       {children}
     </AppShell>
