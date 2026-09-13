@@ -1,6 +1,4 @@
 import { NeedsAttention } from "@/components/resources/needs-attention";
-import { MonthBurndown } from "@/components/work/month-burndown";
-import { currentMonthBurndown } from "@/lib/data/burndown";
 import Link from "next/link";
 import { requireWorkspace } from "@/lib/data/workspace";
 import {
@@ -17,13 +15,12 @@ import { TaskTable } from "@/components/work/task-table";
 import { ActivityList } from "@/components/work/activity-list";
 export default async function Dashboard() {
   const { user, organization } = await requireWorkspace();
-  const [counts, upcoming, events, directory, statuses, burndown] = await Promise.all([
+  const [counts, upcoming, events, directory, statuses] = await Promise.all([
     dashboardCounts(),
     taskList({ assignee: user.id, upcoming: true, limit: 8 }),
     activity(1, 5),
     directories(),
     taskStatusCounts(),
-    currentMonthBurndown(),
   ]);
   const clients = await Promise.all(directory.clients.map(async client => ({ ...client, ...await clientWorkSummary(client.id) })));
   const attention = clients.filter(c => c.overdue || c.review).sort((a, b) => b.overdue - a.overdue || b.review - a.review);
@@ -79,7 +76,6 @@ export default async function Dashboard() {
       </p>
       <NeedsAttention />
       <TaskStatusOverview counts={statuses} />
-      <MonthBurndown data={burndown} />
       <section className="panel section-gap">
         <div className="panel-heading">
           <div>

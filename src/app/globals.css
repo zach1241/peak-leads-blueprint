@@ -817,22 +817,6 @@ h3 {
     font-size: 11px;
   }
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --background: var(--dark-bg);
-    --surface: var(--dark-surface);
-    --sidebar: var(--dark-surface-2);
-    --foreground: var(--dark-text);
-    --muted: var(--dark-muted);
-    --border: var(--dark-border);
-    --accent: var(--brand-blue);
-    --accent-soft: var(--dark-soft);
-    --danger: #F29999;
-    --shadow: 0 12px 36px #0004;
-    --card-shadow: none;
-    color-scheme: dark;
-  }
-}
 :root[data-theme="dark"] {
     --background: var(--dark-bg);
     --surface: var(--dark-surface);
@@ -1341,3 +1325,9 @@ body:has(.resource-lightbox[open]) { overflow: hidden; }
 .burndown-chart svg { width: 100%; max-height: 300px; }
 .burndown-chart text { fill: var(--muted); font-size: 12px; }
 .burndown-actual { color: var(--brand-blue); }
+
+.header-account-controls { display: flex; align-items: center; gap: 12px; }
+.desktop-theme-toggle { display: inline-flex; align-items: center; justify-content: center; }
+.desktop-theme-toggle:hover { background: var(--accent-soft); color: var(--accent); }
+.desktop-theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 800px) { .desktop-theme-toggle { display: none; } }

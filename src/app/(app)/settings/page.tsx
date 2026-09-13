@@ -1,3 +1,4 @@
+import { ThemeControl } from "@/components/theme-control";
 import { ProfilePhoto } from "@/components/profile-photo";
 import { requireWorkspace } from "@/lib/data/workspace";
 import { ActionForm } from "@/components/work/action-form";
@@ -52,6 +53,10 @@ export default async function Settings() {
 
           </div>
         </ActionForm>
+      </section>
+      <section className="panel form-panel section-gap">
+        <h2>Appearance</h2>
+        <ThemeControl />
       </section>
       <section className="panel form-panel section-gap">
         <h2>Resources</h2>

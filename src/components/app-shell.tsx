@@ -113,6 +113,8 @@ export function AppShell({
             <span className="slash">/</span>
             <strong>{current}</strong>
           </div>
+          <div className="header-account-controls">
+          <ThemeControl variant="toggle" />
           <details className="user-menu">
             <summary aria-label="Open account menu">
               <Avatar
@@ -127,7 +129,6 @@ export function AppShell({
               <small>SIGNED IN AS</small>
               <p>{email}</p>
               <Link href="/settings">Account settings</Link>
-              <ThemeControl />
               <form action={action}>
                 <button disabled={pending}>
                   {pending ? "Signing out…" : "Sign out"}
@@ -140,6 +141,7 @@ export function AppShell({
               </form>
             </div>
           </details>
+          </div>
         </header>
         <main id="main-content" className="main-content">
           {children}
