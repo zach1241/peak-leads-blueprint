@@ -733,6 +733,10 @@ export type Database = {
         Args: { p_organization_id: string }
         Returns: number
       }
+      set_task_assignees: {
+        Args: { p_organization_id: string; p_task_id: string; p_assignees: string[] }
+        Returns: undefined
+      }
       save_task: {
         Args: {
           p_assignees: string[]

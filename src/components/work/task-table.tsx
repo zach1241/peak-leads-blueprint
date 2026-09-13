@@ -1,3 +1,4 @@
+import { AssigneeEditor } from "./assignee-editor";
 import Link from "next/link";
 import { displayDate } from "@/lib/data/constants";
 import type { taskList, Directory } from "@/lib/data/queries";
@@ -6,9 +7,11 @@ import { EmptyState } from "@/components/empty-state";
 export function TaskTable({
   tasks,
   members,
+  assignmentOrganizationId,
 }: {
   tasks: Awaited<ReturnType<typeof taskList>>["rows"];
   members: Directory["members"];
+  assignmentOrganizationId?: string;
 }) {
   if (!tasks.length)
     return (
@@ -50,7 +53,12 @@ export function TaskTable({
                 <Badge value={task.priority} />
               </td>
               <td>
-                {task.task_assignees
+                {assignmentOrganizationId ? <AssigneeEditor
+                  key={task.id + ":" + task.task_assignees.map(a => a.user_id).sort().join(",")}
+                  taskId={task.id} organizationId={assignmentOrganizationId}
+                  assigned={task.task_assignees.map(a => a.user_id)}
+                  members={members.map(m => ({ id: m.user_id, name: m.profiles?.full_name || `Member ${m.user_id.slice(0, 8)}` }))}
+                /> : task.task_assignees
                   .map(
                     (a) =>
                       members.find((m) => m.user_id === a.user_id)?.profiles

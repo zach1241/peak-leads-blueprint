@@ -167,3 +167,21 @@ export async function saveProfile(
   refreshWork();
   return { success: "Profile updated." };
 }
+
+export async function updateTaskAssignees(form: FormData): Promise<WorkState> {
+  const { db, organization, canAdmin } = await requireWorkspace();
+  if (!canAdmin) return { error: "Only owners and admins can change assignments." };
+  const parsed = z.object({ task_id: z.uuid(), organization_id: z.uuid(), assignees: z.array(z.uuid()).max(100) }).safeParse({
+    task_id: form.get("task_id"), organization_id: form.get("organization_id"), assignees: form.getAll("assignees"),
+  });
+  if (!parsed.success) return { error: "Choose a valid task and workspace members." };
+  if (parsed.data.organization_id !== organization.id) return { error: "Your workspace changed. Refresh before assigning this task." };
+  const { error } = await db.rpc("set_task_assignees", {
+    p_organization_id: organization.id,
+    p_task_id: parsed.data.task_id,
+    p_assignees: [...new Set(parsed.data.assignees)],
+  });
+  if (error) return { error: errorMessage(error) };
+  refreshWork();
+  return { success: "Assignments saved." };
+}

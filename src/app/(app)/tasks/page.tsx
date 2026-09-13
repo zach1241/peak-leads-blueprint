@@ -1,3 +1,4 @@
+import { requireWorkspace } from "@/lib/data/workspace";
 import Link from "next/link";
 import { directories, taskList } from "@/lib/data/queries";
 import { taskStatuses, priorities, label } from "@/lib/data/constants";
@@ -19,6 +20,7 @@ export default async function Tasks({
     page?: string;
   }>;
 }) {
+  const { organization, canAdmin } = await requireWorkspace();
   const filters = await searchParams;
   const page = pageNumber(filters.page);
   const [directory, tasks] = await Promise.all([
@@ -73,7 +75,7 @@ export default async function Tasks({
         </Link>
       </form>
       <section className="panel">
-        <TaskTable tasks={tasks.rows} members={directory.members} />
+        <TaskTable tasks={tasks.rows} members={directory.members} assignmentOrganizationId={canAdmin ? organization.id : undefined} />
         <Pagination page={page} count={tasks.count} href={`/tasks?${query}`} />
       </section>
     </>
