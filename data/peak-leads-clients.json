@@ -1,0 +1,46 @@
+[
+  {
+    "name":"FIT Roofing & Construction","slug":"fit-roofing-construction","aliases":["FIT Roofing","FIT Roofing and Construction"],"market":"Texas","contact":"Mike",
+    "notes":"Active services: Dominate SEO and Social Media. LSA is planned only. The second LSA background-check reset was in progress; keep SEO + Social first. Activate LSA only after verification is confirmed.",
+    "services":["dominate-seo","social"],
+    "responsibilities":[
+      {"code":"website","title":"Website development, maintenance and conversion QA","details":"Own or support website development and maintenance, conversion improvements, technical fixes, site performance and user-experience reviews. Review responsive behavior, functionality, forms, tracking and client-facing polish."},
+      {"code":"seo-execution","title":"Coordinate SEO implementation","details":"Coordinate on-page work, technical fixes, internal linking and content implementation with the team."},
+      {"code":"delivery-control","title":"Delivery visibility, blockers and reporting inputs","details":"Track deliverables and deadlines, provide weekly progress visibility and monthly reporting inputs, and surface blockers early to Bradley/team. Track website and conversion fixes discovered during campaign/SEO reviews without inventing a fixed monthly count."}
+    ],
+    "setup":{"name":"LSA Setup / Verification","code":"lsa-verification","status":"on_hold","responsibility":"LSA verification and setup blocked","details":"Second background-check reset was in progress. Support readiness checks and conversion-focused LSA setup once verification clears. No recurring numerical LSA deliverables are active for this client. Activation requires explicit verification confirmation."}
+  },
+  {
+    "name":"In The Light Roofing","slug":"in-the-light-roofing","aliases":["In the Light Roofing"],"market":"Allentown / Lehigh Valley, Pennsylvania","contact":"Bryce",
+    "notes":"Active services: Dominate SEO, Local Services Ads and Google Ads. Search activity focuses on roof repair, roof replacement and near-me intent around Allentown. LSA performance, verification/account health and lead quality are important.",
+    "services":["dominate-seo","lsa","google-ads"],
+    "responsibilities":[
+      {"code":"website","title":"Website, landing pages and conversion paths","details":"Maintain and improve website and landing pages supporting organic/paid traffic; improve conversion paths and review responsive behavior, performance, forms and tracking."},
+      {"code":"seo-execution","title":"Coordinate Dominate SEO implementation","details":"Implement content, on-page SEO, technical fixes and internal linking. Focus on roof repair/replacement/near-me search intent around Allentown."},
+      {"code":"tracking","title":"Calls, forms and conversion tracking","details":"Check that calls and form submissions are measurable and useful for reporting, alongside LSA lead quality and answered/missed-call observations."},
+      {"code":"delivery-control","title":"Escalations and weekly/monthly reporting inputs","details":"Escalate campaign and website issues quickly. Provide clear team/client updates, weekly snapshots, monthly reporting inputs and conversion observations. Surface blockers early to Bradley/team."}
+    ]
+  },
+  {
+    "name":"Water Automation / aquaHALT","slug":"water-automation-aquahalt","aliases":["Water Automation","aquaHALT","Water Automation / Aquahalt"],"market":"US / product-led","contact":"Greg & Amy",
+    "notes":"Active service: Dominate SEO only. Four blogs were already delivered from planned content work; the source does not identify their delivery month, so no September completion has been assumed. Buyer-intent opportunities include fixture-level leak detection and automatic shutoff for homeowners, property managers, builders, apartments and commercial applications.",
+    "services":["dominate-seo"],
+    "responsibilities":[
+      {"code":"website","title":"Website implementation, UX and conversion improvements","details":"Support technical/development implementation, website fixes and UX/conversion improvements. Review responsive behavior, performance, functionality, forms and tracking."},
+      {"code":"seo-execution","title":"Buyer-intent SEO implementation","details":"Implement on-page recommendations, internal links, metadata/content changes and technical SEO fixes. Support the buyer-intent audiences and topics recorded in the client notes."},
+      {"code":"blog-qa","title":"Blog formatting, publishing and page connections","details":"Format and publish blog content; connect blogs to relevant service/product pages and verify branding and responsive presentation."},
+      {"code":"delivery-control","title":"SEO progress, blockers and reporting inputs","details":"Track SEO progress and blockers; supply weekly/monthly reporting observations and recommendations. Surface blockers early to Bradley/team."}
+    ]
+  },
+  {
+    "name":"Logic LC","slug":"logic-lc","aliases":[],"market":"Philadelphia HQ / nationwide; Essington / Philadelphia area","contact":"Joseph & Kevin",
+    "notes":"Active service: Standard SEO only, NOT Dominate SEO. Preserve nationwide positioning for Security Cameras, Access Control and Network Infrastructure. Keep Managed IT, Business Phone Systems / VoIP and IT Consulting locally positioned.",
+    "services":["standard-seo"],
+    "responsibilities":[
+      {"code":"website","title":"Website maintenance and approved positioning","details":"Maintain and improve the website while preserving nationwide security/networking positioning and local Managed IT, VoIP and IT Consulting positioning."},
+      {"code":"seo-execution","title":"Standard SEO implementation","details":"Implement on-page SEO, internal linking, technical fixes and content updates within the Standard SEO scope. Publish and format approved content."},
+      {"code":"qa","title":"Responsive, accessibility and conversion QA","details":"Check responsive behavior, accessibility, conversion paths, performance, functionality, forms, tracking and client-facing polish."},
+      {"code":"delivery-control","title":"Standard SEO tracking and reporting inputs","details":"Track Standard SEO deliverables and provide weekly/monthly reporting inputs. Surface blockers early to Bradley/team; never substitute Dominate SEO targets."}
+    ]
+  }
+]

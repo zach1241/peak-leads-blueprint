@@ -4,16 +4,22 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:start": "npx supabase@2.117.0 start -x studio,imgproxy,storage-api,realtime,edge-runtime,logflare,vector,supavisor",
+    "db:test": "npx supabase@2.117.0 test db",
+    "test:api": "node scripts/test-api.mjs",
+    "dev:local": "node scripts/dev-local.mjs",
+    "test:delivery": "node scripts/test-delivery.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.116.0",
     "next": "16.3.5",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "zod": "^4.6.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

@@ -1,0 +1,78 @@
+[
+  {
+    "code":"standard-seo","name":"Standard SEO",
+    "deliverables":[
+      {"code":"technical-audit","name":"Technical SEO Audit & Fixes","cadence":"monthly","min":1,"max":1,"unit":"cycle"},
+      {"code":"on-page","name":"On-Page SEO","cadence":"monthly","min":4,"max":4,"unit":"pages"},
+      {"code":"blogs","name":"Blog Posts","cadence":"monthly","min":2,"max":2,"unit":"posts"},
+      {"code":"local-posts","name":"Local SEO Posts","cadence":"monthly","min":2,"max":2,"unit":"posts"},
+      {"code":"keywords","name":"Keyword Tracking","cadence":"weekly","min":25,"max":25,"unit":"keywords"},
+      {"code":"report","name":"SEO Report","cadence":"monthly","min":1,"max":1,"unit":"report"}
+    ],
+    "responsibilities":[
+      {"code":"implementation","title":"SEO implementation and performance","details":"Manage SEO implementation and performance throughout the month to support numerical deliverables. Technical health is addressed through the monthly Technical SEO Audit & Fixes cycle; do not count ongoing checks as extra cycles."}
+    ]
+  },
+  {
+    "code":"dominate-seo","name":"Dominate SEO",
+    "deliverables":[
+      {"code":"on-page","name":"On-Page SEO","cadence":"monthly","min":6,"max":6,"unit":"pages"},
+      {"code":"blogs","name":"Blog Posts","cadence":"monthly","min":4,"max":4,"unit":"posts"},
+      {"code":"local-posts","name":"Local SEO Posts","cadence":"monthly","min":4,"max":4,"unit":"posts"},
+      {"code":"backlinks","name":"Quality Backlinks","cadence":"monthly","min":2,"max":3,"unit":"backlinks"},
+      {"code":"keywords","name":"Keyword Tracking","cadence":"weekly","min":50,"max":50,"unit":"keywords"},
+      {"code":"conversion-pages","name":"Conversion / Landing Page Optimization","cadence":"monthly","min":2,"max":2,"unit":"pages"},
+      {"code":"report","name":"SEO Report","cadence":"monthly","min":1,"max":1,"unit":"report","details":"Cover keyword performance, organic traffic, conversions, technical health, backlink progress, competitor/content-gap analysis, completed work, and next-month priorities."}
+    ],
+    "responsibilities":[
+      {"code":"technical","title":"Technical SEO monitoring & fixes","details":"Monitor indexing and technical health, and implement fixes throughout the month. This is an ongoing responsibility, not an arbitrary monthly completion count."},
+      {"code":"performance","title":"Organic performance and conversion opportunities","details":"Monitor organic performance and conversion opportunities throughout the month. Contribute observations to reporting and implementation."}
+    ]
+  },
+  {
+    "code":"lsa","name":"Local Services Ads",
+    "deliverables":[
+      {"code":"lead-reviews","name":"Lead Reviews","cadence":"weekly","min":1,"max":1,"unit":"review"},
+      {"code":"call-reviews","name":"Call Recording Reviews","cadence":"weekly","min":1,"max":1,"unit":"review"},
+      {"code":"budget","name":"Budget / Bidding Review","cadence":"weekly","min":1,"max":1,"unit":"review"},
+      {"code":"service-area","name":"Service Area & Job Type Review","cadence":"monthly","min":1,"max":1,"unit":"review"},
+      {"code":"report","name":"LSA Performance Report","cadence":"monthly","min":1,"max":1,"unit":"report"}
+    ],
+    "responsibilities":[
+      {"code":"account","title":"LSA account, profile and verification monitoring","details":"Monitor account and profile health and verification status; surface issues promptly."},
+      {"code":"lead-quality","title":"Missed calls and lead quality","details":"Monitor missed/answered calls and lead quality; dispute invalid leads as required."},
+      {"code":"conversion","title":"Speed-to-lead and conversion monitoring","details":"Monitor response speed and lead conversion; surface conversion blockers."}
+    ]
+  },
+  {
+    "code":"google-ads","name":"Google Ads",
+    "deliverables":[
+      {"code":"search-terms","name":"Search Term Review","cadence":"weekly","min":1,"max":1,"unit":"review"},
+      {"code":"negatives","name":"Negative Keyword Update","cadence":"weekly","min":1,"max":1,"unit":"update"},
+      {"code":"optimization","name":"Campaign Optimization","cadence":"weekly","min":1,"max":1,"unit":"cycle"},
+      {"code":"budget","name":"Budget / Bidding Review","cadence":"weekly","min":1,"max":1,"unit":"review"},
+      {"code":"tracking","name":"Conversion Tracking Audit","cadence":"monthly","min":1,"max":1,"unit":"audit"},
+      {"code":"landing-page","name":"Landing Page Review","cadence":"monthly","min":1,"max":1,"unit":"review"},
+      {"code":"report","name":"Google Ads Performance Report","cadence":"monthly","min":1,"max":1,"unit":"report"}
+    ],
+    "responsibilities":[
+      {"code":"monitoring","title":"Campaign, spend and conversion monitoring","details":"Review campaign performance, spend and conversions on the existing Monday/Friday rhythm. These checks support, but do not double, the supplied weekly numerical deliverables."},
+      {"code":"management","title":"Keyword, targeting and ad-performance management","details":"Manage keywords, targeting and ad performance; monitor search intent."},
+      {"code":"issues","title":"Waste reduction and issue response","details":"Identify wasted spend, reduce waste, and respond to campaign or tracking issues as required."}
+    ]
+  },
+  {
+    "code":"social","name":"Social Media",
+    "deliverables":[
+      {"code":"posts","name":"Social Posts","cadence":"monthly","min":12,"max":12,"unit":"posts"},
+      {"code":"reels","name":"Reels / Short-Form Videos","cadence":"monthly","min":4,"max":4,"unit":"videos"},
+      {"code":"calendar","name":"Content Calendar","cadence":"monthly","min":1,"max":1,"unit":"calendar"},
+      {"code":"report","name":"Performance Report","cadence":"monthly","min":1,"max":1,"unit":"report"}
+    ],
+    "responsibilities":[
+      {"code":"publishing","title":"Scheduling and publishing","details":"Prepare and publish planned social content against the approved calendar."},
+      {"code":"quality","title":"Brand consistency and content quality","details":"Maintain brand consistency across posts and perform content quality control."},
+      {"code":"monitoring","title":"Engagement and performance monitoring","details":"Monitor engagement and performance; adjust content based on performance as required."}
+    ]
+  }
+]

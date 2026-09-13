@@ -9,15 +9,19 @@ import { Icon } from "./icon";
 export function AppShell({
   children,
   email,
+  workspaceName,
 }: {
   children: React.ReactNode;
   email: string;
+  workspaceName?: string;
 }) {
   const pathname = usePathname();
   const dialog = useRef<HTMLDialogElement>(null);
   const [state, action, pending] = useActionState(logout, {});
   const current =
-    navigation.find((item) => item.href === pathname)?.label ?? "Workspace";
+    navigation.find(
+      (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
+    )?.label ?? "Workspace";
   const nav = (
     <nav aria-label="Main navigation">
       <p className="nav-label">WORKSPACE</p>
@@ -47,7 +51,7 @@ export function AppShell({
         {nav}
         <div className="sidebar-footer">
           <span className="status-dot" />
-          Peak Leads workspace
+          {workspaceName ?? "Peak Leads workspace"}
           <small>A little clarity. A lot of progress.</small>
         </div>
       </aside>
@@ -82,7 +86,9 @@ export function AppShell({
             >
               ☰
             </button>
-            <span>Workspace</span>
+            <span className="workspace-name">
+              {workspaceName ?? "Workspace"}
+            </span>
             <span className="slash">/</span>
             <strong>{current}</strong>
           </div>
