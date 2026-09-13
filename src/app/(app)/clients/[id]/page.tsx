@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { requireWorkspace } from "@/lib/data/workspace";
-import { directories, taskList } from "@/lib/data/queries";
+import { directories, taskList, clientWorkSummary } from "@/lib/data/queries";
 import { ClientForm } from "@/components/work/forms";
 import {
   PageHeading,
@@ -22,7 +22,7 @@ export default async function Client({
   if (!z.uuid().safeParse(id).success) notFound();
   const page = pageNumber((await searchParams).page);
   const { db, organization, canAdmin } = await requireWorkspace();
-  const [record, directory, tasks, projects] = await Promise.all([
+  const [record, directory, tasks, projects, summary] = await Promise.all([
     db
       .from("clients")
       .select("*")
@@ -38,6 +38,7 @@ export default async function Client({
       .eq("client_id", id)
       .order("name")
       .limit(25),
+    clientWorkSummary(id),
   ]);
   if (record.error || projects.error)
     throw new Error("Unable to load client details.");
@@ -50,7 +51,7 @@ export default async function Client({
       </Link>
       <PageHeading
         title={client.name}
-        description="Client details and associated work."
+        description="Packages, deliverables and progress for this client."
       />
       <div className="detail-badges">
         <Link className="text-link" href={`/delivery?client=${id}`}>
@@ -58,7 +59,35 @@ export default async function Client({
         </Link>
         <Badge value={client.status} />
       </div>
-      <section className="panel form-panel">
+      <section className="panel section-gap">
+        <div className="panel-heading">
+          <h2>Packages / services ({projects.count ?? 0})</h2>
+        </div>
+        <ul className="record-list">
+          {projects.data.length ? (
+            projects.data.map((p) => (
+              <li key={p.id}>
+                <Link href={`/projects/${p.id}`}>{p.name}</Link>
+                <Badge value={p.status} />
+              </li>
+            ))
+          ) : (
+            <li>No projects linked yet.</li>
+          )}
+        </ul>
+        {(projects.count ?? 0) > 25 && (
+          <p className="data-note">Showing the first 25 projects.</p>
+        )}
+      </section>
+      <p className="data-note section-gap"><strong>{summary.outstanding} outstanding · {summary.done} / {summary.total} tasks done</strong> · All tasks, excluding cancelled. See Service Delivery for current-period quantity targets.</p>
+      <section className="panel section-gap">
+        <div className="panel-heading">
+          <h2>Tasks / deliverables ({tasks.count})</h2>
+        </div>
+        <TaskTable tasks={tasks.rows} members={directory.members} />
+        <Pagination page={page} count={tasks.count} href={`/clients/${id}`} />
+      </section>
+            <details className="panel form-panel section-gap"><summary>Client contact details and settings</summary>
         {canAdmin ? (
           <ClientForm client={client} />
         ) : (
@@ -86,34 +115,7 @@ export default async function Client({
             <dd>{client.notes || "No notes"}</dd>
           </dl>
         )}
-      </section>
-      <section className="panel section-gap">
-        <div className="panel-heading">
-          <h2>Projects ({projects.count ?? 0})</h2>
-        </div>
-        <ul className="record-list">
-          {projects.data.length ? (
-            projects.data.map((p) => (
-              <li key={p.id}>
-                <Link href={`/projects/${p.id}`}>{p.name}</Link>
-                <Badge value={p.status} />
-              </li>
-            ))
-          ) : (
-            <li>No projects linked yet.</li>
-          )}
-        </ul>
-        {(projects.count ?? 0) > 25 && (
-          <p className="data-note">Showing the first 25 projects.</p>
-        )}
-      </section>
-      <section className="panel section-gap">
-        <div className="panel-heading">
-          <h2>Directly linked tasks ({tasks.count})</h2>
-        </div>
-        <TaskTable tasks={tasks.rows} members={directory.members} />
-        <Pagination page={page} count={tasks.count} href={`/clients/${id}`} />
-      </section>
+      </details>
     </>
   );
 }

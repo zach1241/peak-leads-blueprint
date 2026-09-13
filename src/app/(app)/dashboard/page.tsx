@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireWorkspace } from "@/lib/data/workspace";
 import {
   dashboardCounts,
+  clientWorkSummary,
   taskStatusCounts,
   taskList,
   activity,
@@ -20,6 +21,9 @@ export default async function Dashboard() {
     directories(),
     taskStatusCounts(),
   ]);
+  const clients = await Promise.all(directory.clients.map(async client => ({ ...client, ...await clientWorkSummary(client.id) })));
+  const attention = clients.filter(c => c.overdue || c.review).sort((a, b) => b.overdue - a.overdue || b.review - a.review);
+  const outstanding = clients.reduce((sum, c) => sum + c.outstanding, 0);
   const metrics = [
     { label: "My Tasks", hint: "Open tasks assigned to you", icon: "tasks" },
     {
@@ -69,7 +73,8 @@ export default async function Dashboard() {
         Live workspace totals · Calendar dates use South Africa time. Done and
         cancelled tasks are excluded.
       </p>
-      <section className="panel">
+      <TaskStatusOverview counts={statuses} />
+      <section className="panel section-gap">
         <div className="panel-heading">
           <div>
             <h2>Upcoming Tasks</h2>
@@ -81,7 +86,6 @@ export default async function Dashboard() {
         </div>
         <TaskTable tasks={upcoming.rows} members={directory.members} />
       </section>
-      <TaskStatusOverview counts={statuses} />
       <div className="dashboard-grid section-gap">
         <section className="panel">
           <div className="panel-heading">
@@ -95,30 +99,13 @@ export default async function Dashboard() {
           </div>
           <ActivityList rows={events.rows} members={directory.members} />
         </section>
-        <section className="workspace-section quick-section">
-          <div>
-            <span className="eyebrow">ONE PLACE FOR THE DETAILS</span>
-            <h2>Your workspace, connected.</h2>
-            <p>Keep the people and projects behind your work in view.</p>
-          </div>
-          <div className="quick-links">
-            <Link href="/clients">
-              <Icon name="clients" />
-              <span>
-                <strong>Client directory</strong>
-                <small>A home for every relationship</small>
-              </span>
-              <Icon name="arrow" />
-            </Link>
-            <Link href="/projects">
-              <Icon name="projects" />
-              <span>
-                <strong>Project workspace</strong>
-                <small>Bring the bigger picture together</small>
-              </span>
-              <Icon name="arrow" />
-            </Link>
-          </div>
+        <section className="panel">
+          <div className="panel-heading"><div><h2>Clients needing attention</h2><p>{outstanding} outstanding client tasks · Prioritized by overdue work, then review.</p></div></div>
+          <ul className="record-list">
+            {attention.slice(0, 5).map(client => <li key={client.id}><Link href={`/clients/${client.id}`}>{client.name}</Link><span>{client.overdue} overdue · {client.review} in review</span></li>)}
+            {!attention.length && <li>No overdue client tasks or work waiting for review.</li>}
+          </ul>
+          <p className="data-note"><Link className="text-link" href="/clients">View all clients →</Link></p>
         </section>
       </div>
     </>

@@ -30,7 +30,7 @@ export function TaskTable({
             <th>Status</th>
             <th>Priority</th>
             <th>Assignees</th>
-            <th>Project / Client</th>
+            <th>Client / service</th>
             <th>Due date</th>
           </tr>
         </thead>
@@ -39,8 +39,9 @@ export function TaskTable({
             <tr key={task.id}>
               <td>
                 <Link className="record-link" href={`/tasks/${task.id}`}>
-                  {task.title}
+                  {task.service_deliverables?.name || task.title}
                 </Link>
+                {task.deliverable_definition_id && <small>{task.completed_quantity} / {task.target_min}{task.target_max !== task.target_min ? `–${task.target_max}` : ""} {task.target_unit} {task.service_deliverables?.cadence === "weekly" ? "per week" : "per month"} · {task.period_start} – {task.period_end}</small>}
               </td>
               <td>
                 <Badge value={task.status} />
@@ -58,8 +59,8 @@ export function TaskTable({
                   .join(", ") || "Unassigned"}
               </td>
               <td>
-                {task.projects?.name ?? "No project"}
-                <small>{task.clients?.name ?? "No direct client"}</small>
+                {task.clients?.name ?? "No client"}
+                <small>{task.projects?.name ?? "No service / project"}</small>
               </td>
               <td className="nowrap">{displayDate(task.due_date)}</td>
             </tr>

@@ -1,3 +1,4 @@
+import { clientWorkSummary } from "@/lib/data/queries";
 import Link from "next/link";
 import { requireWorkspace } from "@/lib/data/workspace";
 import {
@@ -22,11 +23,12 @@ export default async function Clients({
     .order("id")
     .range((page - 1) * 25, page * 25 - 1);
   if (error) throw new Error("Unable to load clients.");
+  const summaries = await Promise.all(data.map(c => clientWorkSummary(c.id)));
   return (
     <>
       <PageHeading
         title="Clients"
-        description="Your relationships, with the details close at hand."
+        description="Choose a client to see their packages, deliverables and progress."
         href={canAdmin ? "/clients/new" : undefined}
         action="Create client"
       />
@@ -43,12 +45,13 @@ export default async function Clients({
                 <tr>
                   <th>Client</th>
                   <th>Status</th>
-                  <th>Primary contact</th>
-                  <th>Website</th>
+                  <th>Active packages / services</th>
+                  <th>Task progress</th>
+                  <th>Outstanding</th>
                 </tr>
               </thead>
               <tbody>
-                {data.map((c) => (
+                {data.map((c, index) => (
                   <tr key={c.id}>
                     <td>
                       <Link className="record-link" href={`/clients/${c.id}`}>
@@ -59,24 +62,9 @@ export default async function Clients({
                     <td>
                       <Badge value={c.status} />
                     </td>
-                    <td>
-                      {c.primary_contact_name || "Not added"}
-                      <small>{c.primary_contact_email}</small>
-                    </td>
-                    <td>
-                      {c.website ? (
-                        <a
-                          className="text-link"
-                          href={c.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Visit website ↗
-                        </a>
-                      ) : (
-                        "Not added"
-                      )}
-                    </td>
+                    <td>{summaries[index].services.map(service => service.service_templates?.name || service.name).join(", ") || "No active services"}</td>
+                    <td>{summaries[index].done} / {summaries[index].total} done<small>All tasks · Cancelled excluded</small></td>
+                    <td><Link className="text-link" href={`/tasks?client=${c.id}`}>{summaries[index].outstanding} outstanding</Link></td>
                   </tr>
                 ))}
               </tbody>

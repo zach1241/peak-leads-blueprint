@@ -32,11 +32,14 @@ export default async function Tasks({
     <>
       <PageHeading
         title="Tasks"
-        description="Actionable work and deliverables. Ongoing responsibilities are available in Settings → Resources."
+        description="Choose a client, then scan their work by status, due date and assignee."
         href="/tasks/new"
         action="Create task"
       />
-      <form className="filter-bar" action="/tasks">
+      <form className="filter-bar" action="/tasks" aria-label="Filter tasks by client, status and assignee">
+        <SelectField name="client" title="Client" value={filters.client} empty="All clients"
+          options={directory.clients.map((c) => ({ value: c.id, label: c.name }))} />
+
         <SelectField
           name="status"
           title="Status"
@@ -64,8 +67,6 @@ export default async function Tasks({
             label: m.profiles?.full_name || `Member ${m.user_id.slice(0, 8)}`,
           }))}
         />
-        <SelectField name="client" title="Client" value={filters.client} empty="All clients"
-          options={directory.clients.map((c) => ({ value: c.id, label: c.name }))} />
         <button className="button secondary">Apply filters</button>
         <Link className="text-link" href="/tasks">
           Clear

@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { Avatar } from "@/components/avatar";
 import { directories } from "@/lib/data/queries";
 import { PageHeading, Badge } from "@/components/work/shared";
 export default async function Team() {
@@ -13,20 +13,11 @@ export default async function Team() {
         <ul className="team-list">
           {members.map((m) => (
             <li key={m.id}>
-              <span className="avatar">
-                {m.profiles?.avatar_url ? (
-                  <Image
-                    src={m.profiles.avatar_url}
-                    width={30}
-                    height={30}
-                    alt=""
-                    unoptimized
-                    style={{ borderRadius: "50%", objectFit: "cover" }}
-                  />
-                ) : (
-                  (m.profiles?.full_name || "T").slice(0, 1).toUpperCase()
-                )}
-              </span>
+              <Avatar
+                key={`${m.user_id}:${m.profiles?.updated_at ?? ""}`}
+                name={m.profiles?.full_name || "Team member"}
+                url={m.profiles?.avatar_url}
+              />
               <div>
                 <strong>{m.profiles?.full_name || "Team member"}</strong>
                 <small>Member {m.user_id.slice(0, 8)}</small>

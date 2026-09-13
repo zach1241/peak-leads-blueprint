@@ -1,8 +1,8 @@
 export const navigation = [
   { href: "/dashboard", label: "Dashboard", icon: "overview" },
-  { href: "/delivery", label: "Delivery", icon: "tasks" },
-  { href: "/tasks", label: "Tasks", icon: "tasks" },
   { href: "/clients", label: "Clients", icon: "clients" },
+  { href: "/tasks", label: "Tasks", icon: "tasks" },
+  { href: "/delivery", label: "Service Delivery", icon: "tasks" },
   { href: "/projects", label: "Projects", icon: "projects" },
   { href: "/team", label: "Team", icon: "team" },
   { href: "/activity", label: "Activity", icon: "activity" },

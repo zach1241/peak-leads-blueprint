@@ -150,7 +150,7 @@ export default async function Delivery({
         );
       })}
       <p className="data-note section-gap">
-        Ongoing responsibilities are reference material.{" "}
+        Reference documentation — not tracked work. Ongoing responsibilities are excluded from task progress.{" "}
         <a className="text-link" href="/documents/peak-leads-client-responsibilities.pdf" download>Download Client Responsibilities</a>
       </p>
     </>

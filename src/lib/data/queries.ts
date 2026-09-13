@@ -62,7 +62,7 @@ export async function taskList({
   const { db, organization } = await requireWorkspace();
   // Filter a separate embed so every assignee is still shown in each result.
   const fields =
-    "*,projects(name),clients(name),task_assignees(user_id),assigned:task_assignees(user_id)" as const;
+    "*,projects(name),clients(name),service_deliverables(name,cadence),task_assignees(user_id),assigned:task_assignees(user_id)" as const;
   let query = db
     .from("tasks")
     .select(fields, { count: "exact" })
@@ -161,3 +161,29 @@ export async function taskStatusCounts() {
     return { status, count: count ?? 0 };
   }));
 }
+
+// Exact counts avoid silently truncating a client's progress at a row limit.
+export const clientWorkSummary = cache(async (clientId: string) => {
+  const { db, organization } = await requireWorkspace();
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date());
+  const base = () => db.from("tasks").select("id", { count: "exact", head: true })
+    .eq("organization_id", organization.id).eq("client_id", clientId);
+  const [total, done, overdue, review, services] = await Promise.all([
+    base().neq("status", "cancelled"), base().eq("status", "done"),
+    base().not("status", "in", "(done,cancelled)").lt("due_date", today),
+    base().eq("status", "review"),
+    db.from("projects").select("id,name,service_templates(name)")
+      .eq("organization_id", organization.id).eq("client_id", clientId)
+      .eq("status", "active").order("name"),
+  ]);
+  if ([total, done, overdue, review, services].some(result => result.error))
+    throw new Error("Unable to load client work summary.");
+  return {
+    total: total.count ?? 0, done: done.count ?? 0,
+    outstanding: (total.count ?? 0) - (done.count ?? 0),
+    overdue: overdue.count ?? 0, review: review.count ?? 0,
+    services: services.data ?? [],
+  };
+});

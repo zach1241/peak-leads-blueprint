@@ -14,12 +14,14 @@ export function AppShell({
   workspaceName,
   fullName,
   avatarUrl,
+  avatarUpdatedAt,
 }: {
   children: React.ReactNode;
   email: string;
   workspaceName?: string;
   fullName?: string;
   avatarUrl?: string;
+  avatarUpdatedAt?: string;
 }) {
   const pathname = usePathname();
   const dialog = useRef<HTMLDialogElement>(null);
@@ -100,7 +102,11 @@ export function AppShell({
           </div>
           <details className="user-menu">
             <summary aria-label="Open account menu">
-              <Avatar name={fullName || email} url={avatarUrl} />
+              <Avatar
+                key={`${avatarUrl ?? "initials"}:${avatarUpdatedAt ?? ""}`}
+                name={fullName || email}
+                url={avatarUrl}
+              />
               <span className="account-label">My account</span>
               <span aria-hidden="true">⌄</span>
             </summary>
