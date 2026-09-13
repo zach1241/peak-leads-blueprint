@@ -2,9 +2,7 @@ import Link from "next/link";
 import { z } from "zod";
 import { requireWorkspace } from "@/lib/data/workspace";
 import { PageHeading, Badge } from "@/components/work/shared";
-import { ActionForm } from "@/components/work/action-form";
 import { DeliveryGenerator } from "@/components/work/delivery-generator";
-import { saveResponsibility } from "@/app/delivery-actions";
 export default async function Delivery({
   searchParams,
 }: {
@@ -31,19 +29,11 @@ export default async function Delivery({
     .order("period_end")
     .order("title")
     .limit(1000);
-  let responsibilityQuery = db
-    .from("managed_responsibilities")
-    .select("*,clients(name),projects(name)", { count: "exact" })
-    .eq("organization_id", organization.id)
-    .order("title")
-    .limit(1000);
   if (client) {
     tasksQuery = tasksQuery.eq("client_id", client);
-    responsibilityQuery = responsibilityQuery.eq("client_id", client);
   }
-  const [tasks, responsibilities, clients] = await Promise.all([
+  const [tasks, clients] = await Promise.all([
     tasksQuery,
-    responsibilityQuery,
     db
       .from("clients")
       .select("id,name")
@@ -51,15 +41,15 @@ export default async function Delivery({
       .order("name")
       .limit(1000),
   ]);
-  if (tasks.error || responsibilities.error || clients.error)
+  if (tasks.error || clients.error)
     throw new Error("Unable to load service delivery.");
-  if ((tasks.count ?? 0) > 1000 || (responsibilities.count ?? 0) > 1000)
+  if ((tasks.count ?? 0) > 1000)
     throw new Error("Delivery view exceeds 1,000 records. Filter by client.");
   return (
     <>
       <PageHeading
         title="Service delivery"
-        description="Numerical commitments and ongoing responsibilities, clearly separated."
+        description="Actionable client deliverables for the current delivery periods."
       />
       <DeliveryGenerator />
       <form className="delivery-filter">
@@ -159,56 +149,10 @@ export default async function Delivery({
           </section>
         );
       })}
-      <section className="section-gap">
-        <div className="panel-heading">
-          <h2>Managed responsibilities</h2>
-          <span>{responsibilities.data.length} responsibilities</span>
-        </div>
-        <p className="data-note">
-          Ongoing work has a status, not a completion quota. These records never
-          contribute to numerical delivery totals.
-        </p>
-        <div className="responsibility-grid">
-          {responsibilities.data.map((r) => (
-            <details className="panel responsibility" key={r.id}>
-              <summary>
-                <strong>{r.title}</strong>
-                <span>
-                  {r.clients?.name} · {r.projects?.name ?? "Client operations"}
-                </span>
-                <Badge value={r.status} />
-              </summary>
-              <p>{r.details}</p>
-              <ActionForm
-                action={saveResponsibility}
-                submit="Update responsibility"
-              >
-                <input type="hidden" name="id" value={r.id} />
-                <label>
-                  Status
-                  <select name="status" defaultValue={r.status}>
-                    <option value="active">Active</option>
-                    <option value="blocked">Blocked</option>
-                    <option value="paused">Paused</option>
-                  </select>
-                </label>
-                <label>
-                  Status note
-                  <textarea
-                    name="status_note"
-                    defaultValue={r.status_note}
-                    maxLength={2000}
-                    rows={3}
-                  />
-                </label>
-              </ActionForm>
-            </details>
-          ))}
-        </div>
-        {!responsibilities.data.length && (
-          <p>No managed responsibilities for this selection.</p>
-        )}
-      </section>
+      <p className="data-note section-gap">
+        Ongoing responsibilities are reference material.{" "}
+        <a className="text-link" href="/documents/peak-leads-client-responsibilities.pdf" download>Download Client Responsibilities</a>
+      </p>
     </>
   );
 }

@@ -1,3 +1,4 @@
+import { ProfilePhoto } from "@/components/profile-photo";
 import { requireWorkspace } from "@/lib/data/workspace";
 import { ActionForm } from "@/components/work/action-form";
 import { PageHeading, Field } from "@/components/work/shared";
@@ -39,6 +40,7 @@ export default async function Settings() {
         </div>
         <h2>Your profile</h2>
         <p className="data-note">Signed in as {user.email}</p>
+        <ProfilePhoto userId={user.id} name={profile.full_name || user.email || "Team member"} url={profile.avatar_url} />
         <ActionForm action={saveProfile} submit="Save profile">
           <div className="form-grid">
             <Field
@@ -47,15 +49,14 @@ export default async function Settings() {
               value={profile.full_name}
               maxLength={120}
             />
-            <Field
-              title="Avatar URL (HTTPS)"
-              name="avatar_url"
-              value={profile.avatar_url}
-              type="url"
-              maxLength={2048}
-            />
+
           </div>
         </ActionForm>
+      </section>
+      <section className="panel form-panel section-gap">
+        <h2>Resources</h2>
+        <p className="data-note">Client responsibilities are static reference material, separate from actionable tasks and delivery progress.</p>
+        <a className="button secondary" href="/documents/peak-leads-client-responsibilities.pdf" download>Download Client Responsibilities</a>
       </section>
     </>
   );

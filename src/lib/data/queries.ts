@@ -149,3 +149,15 @@ export async function dashboardCounts() {
     throw new Error("Unable to load dashboard totals.");
   return results.map((r) => r.count ?? 0);
 }
+
+// Responsibilities live in their own table and never contribute to task totals.
+export async function taskStatusCounts() {
+  const { db, organization } = await requireWorkspace();
+  const statuses = ["todo", "in_progress", "review", "done"] as const;
+  return Promise.all(statuses.map(async (status) => {
+    const { count, error } = await db.from("tasks").select("id", { count: "exact", head: true })
+      .eq("organization_id", organization.id).eq("status", status);
+    if (error) throw new Error("Unable to load task status overview.");
+    return { status, count: count ?? 0 };
+  }));
+}

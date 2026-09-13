@@ -156,9 +156,6 @@ export async function saveProfile(
   const parsed = z
     .object({
       full_name: z.string().trim().max(120),
-      avatar_url: z
-        .union([z.url({ protocol: /^https$/ }).max(2048), z.literal("")])
-        .transform((v) => v || null),
     })
     .safeParse(Object.fromEntries(form));
   if (!parsed.success) return { error: parsed.error.issues[0].message };

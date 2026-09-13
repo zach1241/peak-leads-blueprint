@@ -54,7 +54,7 @@ export default async function Client({
       />
       <div className="detail-badges">
         <Link className="text-link" href={`/delivery?client=${id}`}>
-          Delivery & responsibilities →
+          View deliverables →
         </Link>
         <Badge value={client.status} />
       </div>

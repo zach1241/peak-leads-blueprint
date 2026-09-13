@@ -1298,3 +1298,22 @@ h3 {
   color: var(--foreground);
   font: inherit;
 }
+
+.profile-avatar { overflow: hidden; flex-shrink: 0; }
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.profile-photo-form { margin: 1rem 0 1.5rem; display: grid; gap: .75rem; justify-items: start; }
+.profile-photo-form label { display: grid; gap: .5rem; max-width: 100%; }
+.profile-photo-form input { max-width: 100%; }
+.task-status-chart { display: flex; align-items: center; flex-wrap: wrap; gap: 2rem; padding: 0 1.5rem 1.5rem; }
+.task-status-chart svg { width: 180px; max-width: 100%; }
+.task-status-chart ul { list-style: none; padding: 0; margin: 0; min-width: 180px; }
+.task-status-chart li { display: flex; align-items: center; gap: .65rem; padding: .45rem 0; }
+.task-status-chart li strong { margin-left: auto; }
+.status-todo { --status-color: var(--muted); }
+.status-in_progress { --status-color: var(--brand-blue); }
+.status-review { --status-color: color-mix(in srgb, var(--brand-blue) 45%, var(--foreground)); }
+.status-done { --status-color: var(--foreground); }
+.status-segment { stroke: var(--status-color); }
+.chart-dot { width: .65rem; height: .65rem; border-radius: 50%; background: var(--status-color); }
+.chart-total { fill: var(--foreground); font-size: 26px; font-weight: 700; }
+.chart-caption { fill: var(--muted); font-size: 10px; }

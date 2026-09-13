@@ -15,6 +15,7 @@ export default async function Tasks({
     status?: string;
     priority?: string;
     assignee?: string;
+    client?: string;
     page?: string;
   }>;
 }) {
@@ -25,13 +26,13 @@ export default async function Tasks({
     taskList({ ...filters, page }),
   ]);
   const query = new URLSearchParams();
-  for (const key of ["status", "priority", "assignee"] as const)
+  for (const key of ["status", "priority", "assignee", "client"] as const)
     if (filters[key]) query.set(key, filters[key]);
   return (
     <>
       <PageHeading
         title="Tasks"
-        description="Plan, assign, and follow through together."
+        description="Actionable work and deliverables. Ongoing responsibilities are available in Settings → Resources."
         href="/tasks/new"
         action="Create task"
       />
@@ -63,6 +64,8 @@ export default async function Tasks({
             label: m.profiles?.full_name || `Member ${m.user_id.slice(0, 8)}`,
           }))}
         />
+        <SelectField name="client" title="Client" value={filters.client} empty="All clients"
+          options={directory.clients.map((c) => ({ value: c.id, label: c.name }))} />
         <button className="button secondary">Apply filters</button>
         <Link className="text-link" href="/tasks">
           Clear

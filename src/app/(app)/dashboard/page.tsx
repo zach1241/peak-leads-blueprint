@@ -2,20 +2,23 @@ import Link from "next/link";
 import { requireWorkspace } from "@/lib/data/workspace";
 import {
   dashboardCounts,
+  taskStatusCounts,
   taskList,
   activity,
   directories,
 } from "@/lib/data/queries";
+import { TaskStatusOverview } from "@/components/work/task-status-overview";
 import { Icon } from "@/components/icon";
 import { TaskTable } from "@/components/work/task-table";
 import { ActivityList } from "@/components/work/activity-list";
 export default async function Dashboard() {
   const { user, organization } = await requireWorkspace();
-  const [counts, upcoming, events, directory] = await Promise.all([
+  const [counts, upcoming, events, directory, statuses] = await Promise.all([
     dashboardCounts(),
     taskList({ assignee: user.id, upcoming: true, limit: 8 }),
     activity(1, 5),
     directories(),
+    taskStatusCounts(),
   ]);
   const metrics = [
     { label: "My Tasks", hint: "Open tasks assigned to you", icon: "tasks" },
@@ -47,7 +50,7 @@ export default async function Dashboard() {
       </div>
       <p className="data-note">
         <Link className="text-link" href="/delivery">
-          View service delivery & managed responsibilities →
+          View service delivery →
         </Link>
       </p>
       <section className="metrics" aria-label="Workspace metrics">
@@ -78,6 +81,7 @@ export default async function Dashboard() {
         </div>
         <TaskTable tasks={upcoming.rows} members={directory.members} />
       </section>
+      <TaskStatusOverview counts={statuses} />
       <div className="dashboard-grid section-gap">
         <section className="panel">
           <div className="panel-heading">

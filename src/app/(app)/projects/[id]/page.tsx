@@ -48,7 +48,7 @@ export default async function Project({
           className="text-link"
           href={`/delivery?client=${record.data.client_id ?? ""}`}
         >
-          Delivery & responsibilities →
+          View deliverables →
         </Link>
         <Badge value={record.data.status} />
         {record.data.client_id && (

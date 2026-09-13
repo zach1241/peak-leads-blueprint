@@ -6,15 +6,20 @@ import { logout } from "@/app/actions";
 import { navigation } from "@/lib/navigation";
 import { Brand } from "./brand";
 import { ThemeControl } from "./theme-control";
+import { Avatar } from "./avatar";
 import { Icon } from "./icon";
 export function AppShell({
   children,
   email,
   workspaceName,
+  fullName,
+  avatarUrl,
 }: {
   children: React.ReactNode;
   email: string;
   workspaceName?: string;
+  fullName?: string;
+  avatarUrl?: string;
 }) {
   const pathname = usePathname();
   const dialog = useRef<HTMLDialogElement>(null);
@@ -95,7 +100,7 @@ export function AppShell({
           </div>
           <details className="user-menu">
             <summary aria-label="Open account menu">
-              <span className="avatar">{email.slice(0, 1).toUpperCase()}</span>
+              <Avatar name={fullName || email} url={avatarUrl} />
               <span className="account-label">My account</span>
               <span aria-hidden="true">⌄</span>
             </summary>
