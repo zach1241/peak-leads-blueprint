@@ -1,12 +1,176 @@
-.trigger { border: 0; padding: 4px 0; background: transparent; color: var(--foreground); font: inherit; text-align: left; cursor: pointer; }
-.trigger:hover { color: var(--accent); text-decoration: underline; }
-.trigger:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
-.popover { position: fixed; margin: 0; width: 320px; max-width: calc(100vw - 32px); max-height: min(360px, calc(100dvh - 32px)); padding: 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--foreground); box-shadow: var(--shadow); overflow: auto; }
-.popover::backdrop { background: transparent; }
-.popover h3 { margin: 0 0 12px; font-size: 15px; }
-.options { border: 0; margin: 0; padding: 0; max-height: 210px; overflow-y: auto; }
-.options legend { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
-.options label { display: flex; align-items: center; gap: 9px; padding: 7px 0; cursor: pointer; overflow-wrap: anywhere; }
-.options input { width: 16px; height: 16px; flex: 0 0 16px; accent-color: var(--accent); }
-.actions { display: flex; gap: 8px; margin-top: 14px; }
-.announcement { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.trigger {
+  border: 0;
+  padding: 2px 4px;
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  cursor: pointer;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
+  border-radius: 999px;
+}
+
+.trigger:hover {
+  background: var(--accent-soft);
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.avatarGroup {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+}
+
+.avatarItem {
+  position: relative;
+  display: inline-flex;
+  margin-left: -8px;
+}
+
+.avatarItem:first-child {
+  margin-left: 0;
+}
+
+.avatarItem :global(.avatar) {
+  width: 30px;
+  height: 30px;
+
+  border: 2px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--border);
+
+  font-size: 9px;
+}
+
+.avatarItem :global(.avatar img) {
+  object-fit: cover;
+}
+
+.moreAvatar {
+  width: 30px;
+  height: 30px;
+
+  margin-left: -8px;
+
+  display: grid;
+  place-items: center;
+
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+
+  background: var(--foreground);
+  color: var(--background);
+
+  font-size: 10px;
+  font-weight: 700;
+
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+.unassigned {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.chevron {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.popover {
+  position: fixed;
+  margin: 0;
+
+  width: 320px;
+  max-width: calc(100vw - 32px);
+  max-height: min(
+    360px,
+    calc(100dvh - 32px)
+  );
+
+  padding: 16px;
+
+  border: 1px solid var(--border);
+  border-radius: 10px;
+
+  background: var(--surface);
+  color: var(--foreground);
+
+  box-shadow: var(--shadow);
+
+  overflow: auto;
+}
+
+.popover::backdrop {
+  background: transparent;
+}
+
+.popover h3 {
+  margin: 0 0 12px;
+  font-size: 15px;
+}
+
+.options {
+  border: 0;
+  margin: 0;
+  padding: 0;
+
+  max-height: 210px;
+  overflow-y: auto;
+}
+
+.options legend {
+  margin-bottom: 8px;
+
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.options label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  padding: 7px 0;
+
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.options label :global(.avatar) {
+  width: 28px;
+  height: 28px;
+  font-size: 9px;
+}
+
+.options input {
+  width: 16px;
+  height: 16px;
+
+  flex: 0 0 16px;
+
+  accent-color: var(--accent);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.announcement {
+  position: absolute;
+
+  width: 1px;
+  height: 1px;
+
+  overflow: hidden;
+
+  clip-path: inset(50%);
+}
