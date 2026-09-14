@@ -1331,3 +1331,11 @@ body:has(.resource-lightbox[open]) { overflow: hidden; }
 .desktop-theme-toggle:hover { background: var(--accent-soft); color: var(--accent); }
 .desktop-theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 @media (max-width: 800px) { .desktop-theme-toggle { display: none; } }
+
+/* Native status options inherit the active light/dark palette. */
+.task-status-select { color: var(--foreground); background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font: inherit; font-weight: 600; color-scheme: inherit; }
+.task-status-select:hover { background: var(--accent-soft); color: var(--foreground); }
+.task-status-select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.task-status-select option { background: var(--surface); color: var(--foreground); }
+.task-status-select option:checked { background: var(--button-bg); color: var(--button-text); }
+.task-status-select:disabled { opacity: .7; }

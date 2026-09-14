@@ -67,6 +67,11 @@ export async function taskList({
     .from("tasks")
     .select(fields, { count: "exact" })
     .eq("organization_id", organization.id);
+  // One-time work stays visible; recurring work is scoped to its current period.
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date());
+  query = query.or(`and(deliverable_definition_id.is.null,recurrence_type.eq.none,recurrence_parent_id.is.null),and(period_start.lte.${today},period_end.gte.${today})`);
   const parsedStatus = z.enum(taskStatuses).safeParse(status);
   const parsedPriority = z.enum(priorities).safeParse(priority);
   if (parsedStatus.success) query = query.eq("status", parsedStatus.data);

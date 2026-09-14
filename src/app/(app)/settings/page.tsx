@@ -58,11 +58,7 @@ export default async function Settings() {
         <h2>Appearance</h2>
         <ThemeControl />
       </section>
-      <section className="panel form-panel section-gap">
-        <h2>Resources</h2>
-        <p className="data-note">Client responsibilities are static reference material, separate from actionable tasks and delivery progress.</p>
-        <a className="button secondary" href="/documents/peak-leads-client-responsibilities.pdf" download>Download Client Responsibilities</a>
-      </section>
+
     </>
   );
 }

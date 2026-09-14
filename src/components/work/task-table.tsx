@@ -1,3 +1,4 @@
+import { StatusEditor } from "./status-editor";
 import Link from "next/link";
 
 import { EmptyState } from "@/components/empty-state";
@@ -14,10 +15,14 @@ export function TaskTable({
   tasks,
   members,
   assignmentOrganizationId,
+  editableStatus = false,
+  statusUserId,
 }: {
   tasks: Awaited<ReturnType<typeof taskList>>["rows"];
   members: Directory["members"];
   assignmentOrganizationId?: string;
+  editableStatus?: boolean;
+  statusUserId?: string;
 }) {
   if (!tasks.length) {
     return (
@@ -86,7 +91,7 @@ export function TaskTable({
                 </td>
 
                 <td>
-                  <Badge value={task.status} />
+                  {editableStatus && (!statusUserId || assignedIds.includes(statusUserId)) ? <StatusEditor key={task.id + task.status + task.completed_quantity} id={task.id} status={task.status} quantity={task.completed_quantity} target={task.target_min} /> : <Badge value={task.status} />}
                 </td>
 
                 <td>

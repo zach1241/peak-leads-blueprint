@@ -44,3 +44,11 @@ export const requireWorkspace = cache(async () => {
     canAdmin: membership.role === "owner" || membership.role === "admin",
   };
 });
+
+export async function canUpdateTask(taskId: string) {
+  const { db, organization, user, canAdmin } = await requireWorkspace();
+  if (canAdmin) return true;
+  const { data, error } = await db.from("task_assignees").select("id")
+    .eq("organization_id", organization.id).eq("task_id", taskId).eq("user_id", user.id).maybeSingle();
+  return !error && Boolean(data);
+}

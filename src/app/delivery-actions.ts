@@ -1,12 +1,13 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requireWorkspace } from "@/lib/data/workspace";
+import { requireWorkspace, canUpdateTask } from "@/lib/data/workspace";
 import type { WorkState } from "./work-actions";
 export async function generateDeliverables(): Promise<
   WorkState & { inserted?: number }
 > {
-  const { db, organization } = await requireWorkspace();
+  const { db, organization, canAdmin } = await requireWorkspace();
+  if (!canAdmin) return { error: "Only owners and admins can generate deliverables." };
   const { data, error } = await db.rpc("generate_current_deliverables", {
     p_organization_id: organization.id,
   });
@@ -18,7 +19,7 @@ export async function generateDeliverables(): Promise<
   return {
     inserted: data,
     success: data
-      ? `${data} deliverables added.`
+      ? `${data} tasks added.`
       : "This period is up to date.",
   };
 }
@@ -33,6 +34,7 @@ export async function saveQuantity(
     })
     .safeParse(Object.fromEntries(form));
   if (!parsed.success) return { error: "Enter a valid whole-number quantity." };
+  if (!await canUpdateTask(parsed.data.id)) return { error: "You can only update tasks assigned to you." };
   const { db, organization } = await requireWorkspace();
   const { data, error } = await db
     .from("tasks")

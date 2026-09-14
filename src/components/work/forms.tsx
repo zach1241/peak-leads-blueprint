@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { saveTask, saveClient, saveProject } from "@/app/work-actions";
 import {
   taskStatuses,
@@ -48,6 +49,13 @@ export function TaskForm({
           type="date"
           value={task?.due_date}
         />
+        {!task?.deliverable_definition_id && !task?.recurrence_parent_id && <>
+          <SelectField name="recurrence_type" title="Repeat" value={task?.recurrence_type || "none"} options={[{value:"none",label:"Does not repeat"},{value:"weekly",label:"Weekly"},{value:"biweekly",label:"Every 2 weeks"},{value:"monthly",label:"Monthly"}]} />
+          <Field name="recurrence_start" title="Repeat anchor (defaults to due date)" type="date" value={task?.recurrence_start} />
+          <Field name="recurrence_end" title="Repeat until (optional)" type="date" value={task?.recurrence_end} />
+          <p className="data-note full-field">Repeats use the same day of the week or day of the month. Only the current occurrence is generated. Editing a repeating source affects newly generated occurrences; existing work is preserved. Choose Does not repeat to stop future generation.</p>
+        </>}
+        {task?.recurrence_parent_id && <p className="data-note">This is one occurrence. <Link className="text-link" href={`/tasks/${task.recurrence_parent_id}`}>Edit the original task</Link> to change recurrence.</p>}
         <SelectField
           name="project_id"
           title="Project"

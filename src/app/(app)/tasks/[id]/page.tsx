@@ -1,3 +1,4 @@
+import { StatusEditor } from "@/components/work/status-editor";
 import Link from "next/link";
 import { saveQuantity } from "@/app/delivery-actions";
 import { directories, taskDetail } from "@/lib/data/queries";
@@ -38,6 +39,7 @@ export default async function Task({
     .order("id")
     .range((page - 1) * 25, page * 25 - 1);
   if (error) throw new Error("Unable to load comments.");
+  const canUpdate = context.canAdmin || task.task_assignees.some(a => a.user_id === context.user.id);
   return (
     <>
       <Link href="/tasks" className="back-link">
@@ -65,7 +67,7 @@ export default async function Task({
             Record actual delivery here. Reaching the minimum marks this task
             done; reducing the quantity reopens it.
           </p>
-          <ActionForm action={saveQuantity} submit="Save delivered quantity">
+          {canUpdate && <ActionForm action={saveQuantity} submit="Save delivered quantity">
             <input type="hidden" name="id" value={task.id} />
             <label>
               Completed quantity
@@ -79,7 +81,7 @@ export default async function Task({
                 defaultValue={task.completed_quantity}
               />
             </label>
-          </ActionForm>
+          </ActionForm>}
           <Link
             href={`/delivery?client=${task.client_id}`}
             className="text-link"
@@ -89,7 +91,7 @@ export default async function Task({
         </section>
       )}
       <section className="panel form-panel">
-        <TaskForm task={task} directory={directory} />
+        {context.canAdmin ? <TaskForm task={task} directory={directory} /> : <><p>{task.description}</p>{canUpdate && <StatusEditor key={task.status + task.completed_quantity} id={task.id} status={task.status} quantity={task.completed_quantity} target={task.target_min} />}</>}
       </section>
       <section className="panel form-panel comments-panel">
         <h2>Comments</h2>

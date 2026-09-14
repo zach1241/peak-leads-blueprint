@@ -491,6 +491,8 @@ export type Database = {
       }
       service_deliverables: {
         Row: {
+          operational_cadence: string
+
           active: boolean
           cadence: string
           code: string
@@ -506,6 +508,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          operational_cadence?: string
+
           active?: boolean
           cadence: string
           code: string
@@ -521,6 +525,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          operational_cadence?: string
+
           active?: boolean
           cadence?: string
           code?: string
@@ -624,6 +630,13 @@ export type Database = {
       }
       tasks: {
         Row: {
+          contract_start: string | null
+          contract_end: string | null
+          recurrence_type: string
+          recurrence_start: string | null
+          recurrence_end: string | null
+          recurrence_parent_id: string | null
+
           client_id: string | null
           completed_quantity: number
           created_at: string
@@ -645,6 +658,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          contract_start?: string | null
+          contract_end?: string | null
+          recurrence_type?: string
+          recurrence_start?: string | null
+          recurrence_end?: string | null
+          recurrence_parent_id?: string | null
+
           client_id?: string | null
           completed_quantity?: number
           created_at?: string
@@ -666,6 +686,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          contract_start?: string | null
+          contract_end?: string | null
+          recurrence_type?: string
+          recurrence_start?: string | null
+          recurrence_end?: string | null
+          recurrence_parent_id?: string | null
+
           client_id?: string | null
           completed_quantity?: number
           created_at?: string
@@ -739,6 +766,9 @@ export type Database = {
       }
       save_task: {
         Args: {
+          p_recurrence_type?: string
+          p_recurrence_start?: string | null
+          p_recurrence_end?: string | null
           p_assignees: string[]
           p_client_id: string | null
           p_description: string | null

@@ -14,7 +14,7 @@ export default async function Projects({
   searchParams: Promise<{ page?: string }>;
 }) {
   const page = pageNumber((await searchParams).page);
-  const { db, organization } = await requireWorkspace();
+  const { db, organization, canAdmin } = await requireWorkspace();
   const { data, count, error } = await db
     .from("projects")
     .select("*,clients(name)", { count: "exact" })
@@ -28,7 +28,7 @@ export default async function Projects({
       <PageHeading
         title="Projects"
         description="Connect the daily work to the bigger picture."
-        href="/projects/new"
+        href={canAdmin ? "/projects/new" : undefined}
         action="Create project"
       />
       <section className="panel">

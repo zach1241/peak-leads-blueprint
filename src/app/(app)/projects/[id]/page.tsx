@@ -21,7 +21,7 @@ export default async function Project({
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) notFound();
   const page = pageNumber((await searchParams).page);
-  const { db, organization } = await requireWorkspace();
+  const { db, organization, canAdmin } = await requireWorkspace();
   const [record, directory, tasks] = await Promise.all([
     db
       .from("projects")
@@ -61,14 +61,14 @@ export default async function Project({
         )}
       </div>
       <section className="panel form-panel">
-        <ProjectForm project={record.data} directory={directory} />
+        {canAdmin ? <ProjectForm project={record.data} directory={directory} /> : <p>{record.data.description || "No project description."}</p>}
       </section>
       <section className="panel section-gap">
         <div className="panel-heading">
           <h2>Related tasks ({tasks.count})</h2>
-          <Link className="text-link" href="/tasks/new">
+          {canAdmin && <Link className="text-link" href="/tasks/new">
             Create task →
-          </Link>
+          </Link>}
         </div>
         <TaskTable tasks={tasks.rows} members={directory.members} />
         <Pagination page={page} count={tasks.count} href={`/projects/${id}`} />

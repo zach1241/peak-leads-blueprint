@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { requireWorkspace, workspaceOptions } from "@/lib/data/workspace";
+import { requireWorkspace, workspaceOptions, canUpdateTask } from "@/lib/data/workspace";
 import {
   taskSchema,
   clientSchema,
@@ -50,7 +50,8 @@ export async function saveTask(
   _: WorkState,
   form: FormData,
 ): Promise<WorkState> {
-  const { db, organization } = await requireWorkspace();
+  const { db, organization, canAdmin } = await requireWorkspace();
+  if (!canAdmin) return { error: "Only owners and admins can manage tasks." };
   const parsed = taskSchema.safeParse({
     ...Object.fromEntries(form),
     assignees: form.getAll("assignees"),
@@ -70,6 +71,9 @@ export async function saveTask(
     p_project_id: v.project_id,
     p_client_id: v.client_id,
     p_assignees: [...new Set(v.assignees)],
+    p_recurrence_type: v.recurrence_type,
+    p_recurrence_start: v.recurrence_type === "none" ? null : v.recurrence_start || v.due_date,
+    p_recurrence_end: v.recurrence_type === "none" ? null : v.recurrence_end || null,
   });
   if (error) return { error: errorMessage(error) };
   refreshWork();
@@ -106,7 +110,8 @@ export async function saveProject(
   _: WorkState,
   form: FormData,
 ): Promise<WorkState> {
-  const { db, organization, user } = await requireWorkspace();
+  const { db, organization, user, canAdmin } = await requireWorkspace();
+  if (!canAdmin) return { error: "Only owners and admins can manage projects." };
   const parsed = projectSchema.safeParse(Object.fromEntries(form));
   const id = recordId(form);
   if (!parsed.success) return { error: parsed.error.issues[0].message };
@@ -184,4 +189,18 @@ export async function updateTaskAssignees(form: FormData): Promise<WorkState> {
   if (error) return { error: errorMessage(error) };
   refreshWork();
   return { success: "Assignments saved." };
+}
+
+export async function updateTaskStatus(form: FormData): Promise<WorkState> {
+  const { db, organization } = await requireWorkspace();
+  const parsed = z.object({ id: z.uuid(), status: z.enum(["todo", "in_progress", "review", "done"]), quantity: z.coerce.number().int().min(0).max(1000000).optional() }).safeParse(Object.fromEntries(form));
+  if (!parsed.success) return { error: "Choose a valid task status." };
+  if (!await canUpdateTask(parsed.data.id)) return { error: "You can only update tasks assigned to you." };
+  if (parsed.data.quantity !== undefined) {
+    const { data: task, error } = await db.from("tasks").select("target_min").eq("organization_id", organization.id).eq("id", parsed.data.id).single();
+    if (error || task.target_min === null || parsed.data.status !== "done" || parsed.data.quantity < task.target_min) return { error: "Refresh this task before confirming its delivered quantity." };
+  }
+  const { error } = await db.from("tasks").update({ status: parsed.data.status, ...(parsed.data.quantity !== undefined ? { completed_quantity: parsed.data.quantity } : {}) }).eq("organization_id", organization.id).eq("id", parsed.data.id).select("id").single();
+  if (error) return { error: errorMessage(error) };
+  refreshWork(); return { success: "Status saved." };
 }

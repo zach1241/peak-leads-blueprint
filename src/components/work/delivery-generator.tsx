@@ -11,7 +11,7 @@ export function DeliveryGenerator() {
           const result = await generateDeliverables();
           setMessage(result.error || result.success || "");
         } catch {
-          setMessage("Unable to check delivery periods. Try again.");
+          setMessage("Unable to check work periods. Try again.");
         }
       }),
     [],
@@ -22,7 +22,7 @@ export function DeliveryGenerator() {
   return (
     <div className="delivery-generation">
       <p role="status">
-        {pending ? "Checking current delivery periods…" : message}
+        {pending ? "Checking current work periods…" : message}
       </p>
       <button
         type="button"

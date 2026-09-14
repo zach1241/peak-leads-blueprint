@@ -24,6 +24,14 @@ export const taskSchema = z.object({
   project_id: optionalId,
   client_id: optionalId,
   assignees: z.array(z.uuid()).max(100),
+  recurrence_type: z.enum(["none", "weekly", "biweekly", "monthly"]).default("none"),
+  recurrence_start: date.optional(),
+  recurrence_end: date.optional(),
+}).superRefine((value, context) => {
+  if (value.recurrence_type === "none") return;
+  if (!value.due_date) context.addIssue({ code: "custom", message: "Choose a due date for this repeating task.", path: ["due_date"] });
+  const anchor = value.recurrence_start || value.due_date;
+  if (anchor && value.recurrence_end && value.recurrence_end < anchor) context.addIssue({ code: "custom", message: "Repeat until must be on or after the repeat anchor.", path: ["recurrence_end"] });
 });
 export const clientSchema = z.object({
   name: z.string().trim().min(1).max(160),

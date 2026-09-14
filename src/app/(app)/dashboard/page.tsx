@@ -1,4 +1,6 @@
 import { NeedsAttention } from "@/components/resources/needs-attention";
+import { TeamThisWeek } from "@/components/work/team-this-week";
+import { DeliveryGenerator } from "@/components/work/delivery-generator";
 import Link from "next/link";
 import { requireWorkspace } from "@/lib/data/workspace";
 import {
@@ -14,7 +16,7 @@ import { Icon } from "@/components/icon";
 import { TaskTable } from "@/components/work/task-table";
 import { ActivityList } from "@/components/work/activity-list";
 export default async function Dashboard() {
-  const { user, organization } = await requireWorkspace();
+  const { user, organization, canAdmin } = await requireWorkspace();
   const [counts, upcoming, events, directory, statuses] = await Promise.all([
     dashboardCounts(),
     taskList({ assignee: user.id, upcoming: true, limit: 8 }),
@@ -49,9 +51,9 @@ export default async function Dashboard() {
           <h1>Let’s move work forward.</h1>
           <p>A clear view of your priorities, clients, and team.</p>
         </div>
-        <Link className="button primary" href="/tasks/new">
+        {canAdmin && <Link className="button primary" href="/tasks/new">
           Create task
-        </Link>
+        </Link>}
       </div>
       <p className="data-note">
         <Link className="text-link" href="/delivery">
@@ -75,6 +77,8 @@ export default async function Dashboard() {
         cancelled tasks are excluded.
       </p>
       <NeedsAttention />
+      {canAdmin && <DeliveryGenerator />}
+      <TeamThisWeek />
       <TaskStatusOverview counts={statuses} />
       <section className="panel section-gap">
         <div className="panel-heading">
