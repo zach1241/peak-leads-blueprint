@@ -1,0 +1,43 @@
+.dangerArea {
+  border-color: var(--danger);
+}
+
+.dangerArea summary {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.dangerArea :global(.work-form) {
+  margin-top: 18px;
+}
+
+.description {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.dangerArea .confirmation {
+  flex-direction: row;
+  align-items: flex-start;
+  font-weight: 400;
+}
+
+.confirmation input {
+  flex: 0 0 17px;
+  width: 17px;
+  height: 17px;
+  margin: 2px 0 0;
+  accent-color: var(--danger);
+}
+
+.dangerArea :global(.work-form > button) {
+  background: var(--danger);
+  color: var(--surface);
+}
+
+.dangerArea :global(.work-form > button:hover) {
+  background: var(--danger);
+  filter: brightness(0.92);
+}

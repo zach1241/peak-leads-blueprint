@@ -11,7 +11,8 @@ import {
   pageNumber,
 } from "@/components/work/shared";
 import { ActionForm } from "@/components/work/action-form";
-import { addComment } from "@/app/work-actions";
+import { addComment, deleteTask } from "@/app/work-actions";
+import deletionStyles from "./task-deletion.module.css";
 export default async function Task({
   params,
   searchParams,
@@ -123,6 +124,35 @@ export default async function Task({
         </div>
         <Pagination page={page} count={count ?? 0} href={`/tasks/${id}`} />
       </section>
+      {context.canAdmin && (
+        <details className={`panel form-panel section-gap ${deletionStyles.dangerArea}`}>
+          <summary>Delete task</summary>
+          <p className={deletionStyles.description}>
+            Permanently delete this task, its comments and assignments. Other tasks
+            are kept.
+          </p>
+          {task.recurrence_type !== "none" ? (
+            <p className={deletionStyles.description}>
+              Deleting the original repeating task stops its future occurrences.
+              If it already has generated occurrences, keep their history and choose
+              Does not repeat or change Repeat until in the task settings instead.
+            </p>
+          ) : (task.deliverable_definition_id || task.recurrence_parent_id) && (
+            <p className={deletionStyles.description}>
+              This occurrence stays deleted. Other occurrences and the future recurring
+              schedule are kept.
+            </p>
+          )}
+          <ActionForm action={deleteTask} submit="Delete task permanently">
+            <input type="hidden" name="id" value={task.id} />
+            <input type="hidden" name="organization_id" value={context.organization.id} />
+            <label className={deletionStyles.confirmation}>
+              <input type="checkbox" name="confirm" value="yes" required />
+              I confirm permanent deletion of this task and its comments and assignments.
+            </label>
+          </ActionForm>
+        </details>
+      )}
     </>
   );
 }

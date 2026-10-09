@@ -48,6 +48,12 @@ select pg_temp.reject(format('select public.set_task_assignees(%L,%L,''{}''::uui
 -- Regenerate the occurrence after removing its predecessor. Defaults must persist
 -- independently of a task's lifespan; this exercises the production generator.
 delete from public.tasks where id=:'monthly_id';
+-- Simulate missing fixture data for inheritance, not a user-requested deletion.
+-- Clear only this synthetic organization's markers inside the rollback test.
+reset role;
+delete from private.deleted_task_occurrences
+  where organization_id = '62000000-0000-4000-8000-000000000001';
+set local role authenticated;
 select pg_temp.check(public.generate_current_deliverables('62000000-0000-4000-8000-000000000001')=1,'only the missing occurrence is generated');
 select id as monthly_id from public.tasks where project_id='65000000-0000-4000-8000-000000000001' and deliverable_definition_id='64000000-0000-4000-8000-000000000001' \gset
 select pg_temp.check((select count(*) from public.task_assignees where task_id=:'monthly_id')=2,'new monthly occurrence inherits the saved group');
@@ -57,12 +63,24 @@ select pg_temp.check(public.generate_current_deliverables('62000000-0000-4000-80
 select id as weekly_id from public.tasks where project_id='65000000-0000-4000-8000-000000000001' and deliverable_definition_id='64000000-0000-4000-8000-000000000002' \gset
 select public.set_task_assignees('62000000-0000-4000-8000-000000000001',:'weekly_id',array['61000000-0000-4000-8000-000000000001']::uuid[],true);
 delete from public.tasks where id=:'weekly_id';
+-- Simulate missing fixture data for inheritance, not a user-requested deletion.
+-- Clear only this synthetic organization's markers inside the rollback test.
+reset role;
+delete from private.deleted_task_occurrences
+  where organization_id = '62000000-0000-4000-8000-000000000001';
+set local role authenticated;
 select public.generate_current_deliverables('62000000-0000-4000-8000-000000000001');
 select pg_temp.check((select count(*) from public.task_assignees a join public.tasks t on t.id=a.task_id where t.project_id='65000000-0000-4000-8000-000000000001' and t.deliverable_definition_id='64000000-0000-4000-8000-000000000002')=1,'weekly service occurrence inherits individual assignment');
 select id as weekly_id from public.tasks where project_id='65000000-0000-4000-8000-000000000001' and deliverable_definition_id='64000000-0000-4000-8000-000000000002' \gset
 select public.set_task_assignees('62000000-0000-4000-8000-000000000001',:'weekly_id','{}'::uuid[],true);
 select public.set_task_assignees('62000000-0000-4000-8000-000000000001',:'monthly_id','{}'::uuid[],true);
 delete from public.tasks where id=:'monthly_id';
+-- Simulate missing fixture data for inheritance, not a user-requested deletion.
+-- Clear only this synthetic organization's markers inside the rollback test.
+reset role;
+delete from private.deleted_task_occurrences
+  where organization_id = '62000000-0000-4000-8000-000000000001';
+set local role authenticated;
 select public.generate_current_deliverables('62000000-0000-4000-8000-000000000001');
 select pg_temp.check((select count(*) from public.task_assignees a join public.tasks t on t.id=a.task_id where t.project_id='65000000-0000-4000-8000-000000000001')=0,'clearing future assignments keeps new occurrences unassigned');
 -- Manual recurrence: the original is a genuine prior-month task, and generation
@@ -73,6 +91,12 @@ select pg_temp.check((select count(*) from public.task_assignees where task_id=:
 select public.set_task_assignees('62000000-0000-4000-8000-000000000001',:'child_id',array['61000000-0000-4000-8000-000000000002']::uuid[],true);
 select pg_temp.check((select user_id from public.task_assignees where task_id=:'source_id')='61000000-0000-4000-8000-000000000001'::uuid,'changing future defaults from a child preserves historical source assignment');
 delete from public.tasks where id=:'child_id';
+-- Simulate missing fixture data for inheritance, not a user-requested deletion.
+-- Clear only this synthetic organization's markers inside the rollback test.
+reset role;
+delete from private.deleted_task_occurrences
+  where organization_id = '62000000-0000-4000-8000-000000000001';
+set local role authenticated;
 select public.generate_current_deliverables('62000000-0000-4000-8000-000000000001');
 select pg_temp.check((select a.user_id from public.task_assignees a join public.tasks t on t.id=a.task_id where t.recurrence_parent_id=:'source_id')='61000000-0000-4000-8000-000000000002'::uuid,'new manual occurrence uses changed series default');
 -- New repeating sources capture initial defaults even through the legacy save API.

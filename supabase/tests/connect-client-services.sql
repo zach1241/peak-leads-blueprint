@@ -76,6 +76,12 @@ select pg_temp.check((select c.project_id = f.project_id and c.tasks_assigned = 
 select pg_temp.check((select count(*) from public.projects where client_id = '97000000-0000-4000-8000-000000000001' and service_template_id = '93000000-0000-4000-8000-000000000001') = 1, 'client service uniqueness is preserved');
 select pg_temp.check(public.generate_service_deliverables('92000000-0000-4000-8000-000000000001', (select project_id from connect_test_calls where name = 'first')) = 0, 'scoped generator is idempotent');
 delete from public.tasks where project_id = (select project_id from connect_test_calls where name = 'first') and deliverable_definition_id = '94000000-0000-4000-8000-000000000002';
+-- Simulate missing fixture data for inheritance, not a user-requested deletion.
+-- Clear only this synthetic organization's markers inside the rollback test.
+reset role;
+delete from private.deleted_task_occurrences
+  where organization_id = '92000000-0000-4000-8000-000000000001';
+set local role authenticated;
 select pg_temp.check(public.generate_service_deliverables('92000000-0000-4000-8000-000000000001', (select project_id from connect_test_calls where name = 'first')) = 1, 'scoped generator restores only missing selected weekly occurrence');
 select pg_temp.check((select count(*) from public.task_assignees a join public.tasks t on t.id = a.task_id where t.project_id = (select project_id from connect_test_calls where name = 'first') and t.deliverable_definition_id = '94000000-0000-4000-8000-000000000002') = 2, 'regenerated scoped weekly work inherits future team');
 

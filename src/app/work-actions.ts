@@ -152,6 +152,40 @@ export async function saveTask(
   refreshWork();
   redirect(`/tasks/${data}`);
 }
+export async function deleteTask(
+  _: WorkState,
+  form: FormData,
+): Promise<WorkState> {
+  const { db, organization, canAdmin } = await requireWorkspace();
+  if (!canAdmin) return { error: "Only owners and admins can delete tasks." };
+  const parsed = z.object({
+    id: z.uuid(),
+    organization_id: z.uuid(),
+  }).safeParse({
+    id: form.get("id"),
+    organization_id: form.get("organization_id"),
+  });
+  if (!parsed.success) return { error: "Choose a valid task and workspace." };
+  if (parsed.data.organization_id !== organization.id)
+    return { error: "Your workspace changed. Refresh before deleting this task." };
+  if (form.get("confirm") !== "yes")
+    return { error: "Confirm permanent deletion first." };
+  const { data, error } = await db.from("tasks")
+    .delete()
+    .eq("organization_id", organization.id)
+    .eq("id", parsed.data.id)
+    .select("id")
+    .single();
+  if (error?.code === "23503")
+    return { error: "This task has existing recurring occurrences and cannot be deleted. Keep their history; choose Does not repeat or change Repeat until in the task settings instead." };
+  if (error?.code === "42501")
+    return { error: "You do not have permission to delete this task." };
+  if (error?.code === "PGRST116" || (!error && !data))
+    return { error: "This task no longer exists or is unavailable in this workspace. Refresh and try again." };
+  if (error) return { error: "Unable to delete this task. Refresh and try again." };
+  refreshWork();
+  redirect("/tasks");
+}
 export async function saveClient(
   _: WorkState,
   form: FormData,

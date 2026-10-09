@@ -79,6 +79,12 @@ select pg_temp.check(public.set_service_assignees('82000000-0000-4000-8000-00000
 select pg_temp.check((select count(*) from public.service_assignment_members where project_id = '85000000-0000-4000-8000-000000000001') = 2, 'temporary bulk edit preserves saved service group');
 select pg_temp.check((select count(*) from public.recurring_assignment_members m join public.recurring_assignment_rules r on r.id = m.rule_id where r.project_id = '85000000-0000-4000-8000-000000000001') = 800, 'temporary bulk edit preserves deliverable defaults');
 delete from public.tasks where id = pg_temp.task('85000000-0000-4000-8000-000000000001', 'seo-400');
+-- Simulate missing fixture data for inheritance, not a user-requested deletion.
+-- Clear only this synthetic organization's markers inside the rollback test.
+reset role;
+delete from private.deleted_task_occurrences
+  where organization_id = '82000000-0000-4000-8000-000000000001';
+set local role authenticated;
 select pg_temp.check(public.generate_current_deliverables('82000000-0000-4000-8000-000000000001') = 1, 'only missing weekly occurrence regenerates');
 select pg_temp.check((select count(*) from public.task_assignees where task_id = pg_temp.task('85000000-0000-4000-8000-000000000001', 'seo-400')) = 2, 'weekly generation inherits persistent group after temporary edit');
 
@@ -90,10 +96,22 @@ select pg_temp.check((select count(*) from public.task_assignees where task_id =
 select pg_temp.check((select count(*) from public.task_assignees where task_id = pg_temp.task('85000000-0000-4000-8000-000000000003', 'seo-new')) = 0, 'unseen deliverable does not copy another client default');
 select public.set_task_assignees('82000000-0000-4000-8000-000000000001', pg_temp.task('85000000-0000-4000-8000-000000000001', 'seo-new'), '{}'::uuid[], true);
 delete from public.tasks where id = pg_temp.task('85000000-0000-4000-8000-000000000001', 'seo-new');
+-- Simulate missing fixture data for inheritance, not a user-requested deletion.
+-- Clear only this synthetic organization's markers inside the rollback test.
+reset role;
+delete from private.deleted_task_occurrences
+  where organization_id = '82000000-0000-4000-8000-000000000001';
+set local role authenticated;
 select public.generate_current_deliverables('82000000-0000-4000-8000-000000000001');
 select pg_temp.check((select count(*) from public.task_assignees where task_id = pg_temp.task('85000000-0000-4000-8000-000000000001', 'seo-new')) = 0, 'explicit empty deliverable override wins over service fallback');
 select public.set_task_assignees('82000000-0000-4000-8000-000000000001', pg_temp.task('85000000-0000-4000-8000-000000000001', 'seo-new'), array['81000000-0000-4000-8000-000000000001']::uuid[], true);
 delete from public.tasks where id = pg_temp.task('85000000-0000-4000-8000-000000000001', 'seo-new');
+-- Simulate missing fixture data for inheritance, not a user-requested deletion.
+-- Clear only this synthetic organization's markers inside the rollback test.
+reset role;
+delete from private.deleted_task_occurrences
+  where organization_id = '82000000-0000-4000-8000-000000000001';
+set local role authenticated;
 select public.generate_current_deliverables('82000000-0000-4000-8000-000000000001');
 select pg_temp.check((select user_id from public.task_assignees where task_id = pg_temp.task('85000000-0000-4000-8000-000000000001', 'seo-new')) = '81000000-0000-4000-8000-000000000001'::uuid, 'single-member individual override wins over service group');
 
@@ -115,6 +133,12 @@ select pg_temp.check(public.set_service_assignees('82000000-0000-4000-8000-00000
 select pg_temp.check((select count(*) from public.task_assignees where task_id in ('86000000-0000-4000-8000-000000000001','86000000-0000-4000-8000-000000000002','86000000-0000-4000-8000-000000000003') and user_id = '81000000-0000-4000-8000-000000000001') = 3, 'historical completed and cancelled assignments preserved');
 select pg_temp.check((select user_id from public.task_assignees where task_id = (select id from bulk_test_ids where name = 'manual-root')) = '81000000-0000-4000-8000-000000000001'::uuid, 'historical manual root assignment preserved');
 delete from public.tasks where recurrence_parent_id = (select id from bulk_test_ids where name = 'manual-root');
+-- Simulate missing fixture data for inheritance, not a user-requested deletion.
+-- Clear only this synthetic organization's markers inside the rollback test.
+reset role;
+delete from private.deleted_task_occurrences
+  where organization_id = '82000000-0000-4000-8000-000000000001';
+set local role authenticated;
 select public.generate_current_deliverables('82000000-0000-4000-8000-000000000001');
 select pg_temp.check((select a.user_id from public.task_assignees a join public.tasks t on t.id = a.task_id where t.recurrence_parent_id = (select id from bulk_test_ids where name = 'manual-root')) = '81000000-0000-4000-8000-000000000003'::uuid, 'manual child inherits bulk future default after existing root rule reset');
 
@@ -165,6 +189,12 @@ select pg_temp.check(public.set_service_assignees('82000000-0000-4000-8000-00000
 select pg_temp.check(public.set_service_assignees('82000000-0000-4000-8000-000000000001', array['85000000-0000-4000-8000-000000000002']::uuid[], '{}'::uuid[], true) = 2, 'clear saves empty future default and unassigns current LSA tasks');
 select pg_temp.check((select default_configured and cardinality(default_assignees) = 0 from public.service_assignment_options('82000000-0000-4000-8000-000000000001') where project_id = '85000000-0000-4000-8000-000000000002'), 'options distinguish deliberate unassignment from absent default');
 delete from public.tasks where id = pg_temp.task('85000000-0000-4000-8000-000000000002', 'lsa-1');
+-- Simulate missing fixture data for inheritance, not a user-requested deletion.
+-- Clear only this synthetic organization's markers inside the rollback test.
+reset role;
+delete from private.deleted_task_occurrences
+  where organization_id = '82000000-0000-4000-8000-000000000001';
+set local role authenticated;
 select public.generate_current_deliverables('82000000-0000-4000-8000-000000000001');
 select pg_temp.check((select count(*) from public.task_assignees a join public.tasks t on t.id = a.task_id where t.project_id = '85000000-0000-4000-8000-000000000002') = 0, 'cleared service stays unassigned after monthly generation');
 select set_config('request.jwt.claim.sub', '81000000-0000-4000-8000-000000000001', true);
