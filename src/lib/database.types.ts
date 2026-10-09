@@ -795,6 +795,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      connect_client_service: {
+        Args: { p_organization_id: string; p_client_id: string; p_service_template_id: string; p_assignees: string[] }
+        Returns: { project_id: string; tasks_assigned: number; tasks_generated: number }[]
+      }
+      generate_service_deliverables: {
+        Args: { p_organization_id: string; p_project_id: string }
+        Returns: number
+      }
       set_service_assignees: {
         Args: { p_organization_id: string; p_project_ids: string[]; p_assignees: string[]; p_apply_to_future: boolean }
         Returns: number

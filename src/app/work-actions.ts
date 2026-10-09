@@ -64,6 +64,40 @@ export async function bulkAssignServices(
   refreshWork();
   return { success: `${data ?? 0} current or upcoming ${data === 1 ? "task" : "tasks"} updated across ${projectIds.length} ${projectIds.length === 1 ? "service" : "services"}.${future ? " Future assignments saved too." : " Saved future assignments kept unchanged."}` };
 }
+export async function connectClientService(
+  _: WorkState,
+  form: FormData,
+): Promise<WorkState> {
+  const { db, organization, canAdmin } = await requireWorkspace();
+  if (!canAdmin) return { error: "Only owners and admins can connect client services." };
+  const parsed = z.object({
+    organization_id: z.uuid(),
+    client_id: z.uuid(),
+    service_template_id: z.uuid(),
+    assignees: z.array(z.uuid()).max(100),
+  }).safeParse({
+    organization_id: form.get("organization_id"),
+    client_id: form.get("client_id"),
+    service_template_id: form.get("service_template_id"),
+    assignees: form.getAll("assignees"),
+  });
+  if (!parsed.success) return { error: "Choose a client, an existing service and its teammates." };
+  if (parsed.data.organization_id !== organization.id)
+    return { error: "Your workspace changed. Refresh before connecting a service." };
+  if (!parsed.data.assignees.length && form.get("leave_unassigned") !== "on")
+    return { error: "Choose teammates or explicitly choose Leave unassigned." };
+  const { data, error } = await db.rpc("connect_client_service", {
+    p_organization_id: organization.id,
+    p_client_id: parsed.data.client_id,
+    p_service_template_id: parsed.data.service_template_id,
+    p_assignees: [...new Set(parsed.data.assignees)],
+  });
+  if (error) return { error: errorMessage(error) };
+  const result = data?.[0];
+  if (!result) return { error: "Unable to connect this service. Refresh and try again." };
+  refreshWork();
+  return { success: `Service connected to this client. ${result.tasks_assigned} ${result.tasks_assigned === 1 ? "task" : "tasks"} updated; ${result.tasks_generated} new ${result.tasks_generated === 1 ? "task" : "tasks"} generated.${parsed.data.assignees.length ? " Future occurrences use the selected teammates." : " Future occurrences remain unassigned."}` };
+}
 export async function selectWorkspace(
   _: WorkState,
   form: FormData,

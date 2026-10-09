@@ -3,6 +3,7 @@
 import { useActionState, useId, useState } from "react";
 import { bulkAssignServices, type WorkState } from "@/app/work-actions";
 import { Avatar } from "@/components/avatar";
+import { ConnectClientService } from "./connect-client-service";
 import type { Directory } from "@/lib/data/queries";
 import type { ServiceAssignmentOption } from "@/lib/data/service-assignments";
 import styles from "./service-assignment-editor.module.css";
@@ -14,11 +15,15 @@ export function ServiceAssignmentEditor({
   organizationId,
   services,
   members,
+  clients,
+  templates,
   clientId,
 }: {
   organizationId: string;
   services: ServiceAssignmentOption[];
   members: Directory["members"];
+  clients: Directory["clients"];
+  templates: { id: string; name: string }[];
   clientId?: string;
 }) {
   const id = useId();
@@ -28,6 +33,7 @@ export function ServiceAssignmentEditor({
   const [leaveUnassigned, setLeaveUnassigned] = useState(false);
   const [scope, setScope] = useState("future");
   const [showResult, setShowResult] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const [state, formAction, pending] = useActionState<WorkState, FormData>(
     async (previous, form) => {
       try {
@@ -39,18 +45,15 @@ export function ServiceAssignmentEditor({
     {},
   );
 
-  const clients = new Map<string, string>();
-  for (const service of services) {
-    if (service.client_id) {
-      clients.set(service.client_id, service.client_name ?? "Client");
-    }
-  }
+  const selectedClient = clients.find((record) => record.id === client);
   const visibleServices = services.filter(
     (service) =>
       client === allClients ||
       (client === noClient && service.client_id === null) ||
       service.client_id === client,
   );
+  const connectedTemplates = new Set(visibleServices.map((service) => service.service_template_id));
+  const availableTemplates = templates.filter((template) => !connectedTemplates.has(template.id));
   const selected = new Set(selectedServices);
   const chosenServices = visibleServices.filter((service) => selected.has(service.id));
   const affectedTasks = chosenServices.reduce(
@@ -69,55 +72,80 @@ export function ServiceAssignmentEditor({
     (scope === "future" || affectedTasks > 0);
 
   return (
-    <details className={`panel ${styles.editor}`}>
+    <details className={`panel ${styles.editor}`} open={Boolean(clientId)}>
       <summary className={styles.summary}>
         <strong>Assign service work</strong>
-        <span>Assign work in one or several services or projects at once.</span>
+        <span>Connect a service to a client or assign their linked work in one save.</span>
       </summary>
+      {!clientId && (
+        <label className={`${styles.clientField} ${styles.clientPicker}`}>
+          Client
+          <select
+            value={client}
+            disabled={pending || connecting}
+            onChange={(event) => {
+              setClient(event.currentTarget.value);
+              setSelectedServices([]);
+              setShowResult(false);
+            }}
+            aria-describedby={`${id}-client-help`}
+          >
+            <option value="">Choose a client</option>
+            <option value={allClients}>All clients</option>
+            {clients.map((record) => (
+              <option key={record.id} value={record.id}>{record.name}</option>
+            ))}
+            {services.some((service) => service.client_id === null) && (
+              <option value={noClient}>No client</option>
+            )}
+          </select>
+          <small id={`${id}-client-help`}>
+            Choose a client to connect a service. Choose All clients to assign linked work across clients.
+          </small>
+        </label>
+      )}
+      {selectedClient && (
+        <ConnectClientService
+          key={selectedClient.id}
+          organizationId={organizationId}
+          clientId={selectedClient.id}
+          clientName={selectedClient.name}
+          templates={availableTemplates}
+          members={members}
+          hasLinkedServices={visibleServices.length > 0}
+          disabled={pending}
+          onPendingChange={setConnecting}
+        />
+      )}
       <form
         action={formAction}
         className={styles.form}
         aria-busy={pending}
         onChange={() => setShowResult(false)}
         onSubmit={() => setShowResult(true)}
+        onReset={() => {
+          setSelectedServices([]);
+          setSelectedMembers([]);
+          setLeaveUnassigned(false);
+          setScope("future");
+        }}
       >
         <input type="hidden" name="organization_id" value={organizationId} />
         <p className={styles.explanation}>
-          Choose services or projects and teammates to replace their work assignments in one save.
+          {clientId
+            ? "For this client, select only the service you want to assign, then choose teammates. "
+            : "Choose services or projects and teammates to replace their work assignments in one save. "}
           Completed and past-period tasks stay unchanged. You can adjust individual
           tasks afterward.
         </p>
-        <fieldset disabled={pending} className={styles.controls}>
-          {!clientId && (
-            <label className={styles.clientField}>
-              Client
-              <select
-                value={client}
-                onChange={(event) => {
-                  setClient(event.target.value);
-                  setSelectedServices([]);
-                }}
-                aria-describedby={`${id}-client-help`}
-              >
-                <option value="">Choose a client</option>
-                <option value={allClients}>All clients</option>
-                {[...clients.entries()]
-                  .sort((a, b) => a[1].localeCompare(b[1]))
-                  .map(([value, name]) => (
-                    <option key={value} value={value}>{name}</option>
-                  ))}
-                {services.some((service) => service.client_id === null) && (
-                  <option value={noClient}>No client</option>
-                )}
-              </select>
-              <small id={`${id}-client-help`}>
-                Choose All clients to assign several clients in the same save.
-              </small>
-            </label>
-          )}
+        <h3>Assign linked service work</h3>
+        <fieldset disabled={pending || connecting} className={styles.controls}>
           <div className={styles.grid}>
             <fieldset className={styles.choiceGroup}>
-              <legend>Services / projects</legend>
+              <legend>Linked services / projects</legend>
+              <p className={styles.hint}>
+                Choose one service for a specific assignment, or several to assign together.
+              </p>
               <div className={styles.selectionActions}>
                 <button
                   type="button"
@@ -150,13 +178,14 @@ export function ServiceAssignmentEditor({
                       name="project_ids"
                       value={service.id}
                       checked={selected.has(service.id)}
-                      onChange={(event) =>
+                      onChange={(event) => {
+                        const checked = event.currentTarget.checked;
                         setSelectedServices((current) =>
-                          event.target.checked
+                          checked
                             ? [...current, service.id]
                             : current.filter((value) => value !== service.id),
-                        )
-                      }
+                        );
+                      }}
                     />
                     <span className={styles.choiceText}>
                       <strong>
@@ -175,7 +204,9 @@ export function ServiceAssignmentEditor({
                 ))}
                 {!visibleServices.length && (
                   <p className={styles.empty}>
-                    {client ? "No services or projects are linked here yet." : "Choose a client to see their services and projects."}
+                    {selectedClient
+                      ? "No services are connected to this client yet. Use Connect a service above to get started."
+                      : client ? "No services or projects are linked here yet." : "Choose a client to see their linked services and projects."}
                   </p>
                 )}
               </div>
@@ -192,9 +223,10 @@ export function ServiceAssignmentEditor({
                       value={member.user_id}
                       checked={selectedMembers.includes(member.user_id)}
                       onChange={(event) => {
-                        if (event.target.checked) setLeaveUnassigned(false);
+                        const checked = event.currentTarget.checked;
+                        if (checked) setLeaveUnassigned(false);
                         setSelectedMembers((current) =>
-                          event.target.checked
+                          checked
                             ? [...current, member.user_id]
                             : current.filter((value) => value !== member.user_id),
                         );
@@ -216,8 +248,9 @@ export function ServiceAssignmentEditor({
                   value="on"
                   checked={leaveUnassigned}
                   onChange={(event) => {
-                    setLeaveUnassigned(event.target.checked);
-                    if (event.target.checked) setSelectedMembers([]);
+                    const checked = event.currentTarget.checked;
+                    setLeaveUnassigned(checked);
+                    if (checked) setSelectedMembers([]);
                   }}
                 />
                 <span className={styles.choiceText}>
@@ -275,7 +308,7 @@ export function ServiceAssignmentEditor({
         </div>
         {showResult && state.error && <p className="form-error" role="alert">{state.error}</p>}
         {showResult && state.success && <p className="form-success" role="status">{state.success}</p>}
-        <button className="button primary" disabled={pending || !canSubmit}>
+        <button className="button primary" disabled={pending || connecting || !canSubmit}>
           {pending ? "Saving assignments…" : "Save service assignments"}
         </button>
       </form>

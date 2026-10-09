@@ -2,7 +2,7 @@ import { requireWorkspace } from "@/lib/data/workspace";
 import { DeliveryGenerator } from "@/components/work/delivery-generator";
 import Link from "next/link";
 import { directories, taskList } from "@/lib/data/queries";
-import { serviceAssignmentOptions } from "@/lib/data/service-assignments";
+import { serviceAssignmentOptions, serviceTemplates } from "@/lib/data/service-assignments";
 import { ServiceAssignmentEditor } from "@/components/work/service-assignment-editor";
 import { taskStatuses, priorities, label } from "@/lib/data/constants";
 import {
@@ -26,10 +26,11 @@ export default async function Tasks({
   const { organization, canAdmin, user } = await requireWorkspace();
   const filters = await searchParams;
   const page = pageNumber(filters.page);
-  const [directory, tasks, services] = await Promise.all([
+  const [directory, tasks, services, templates] = await Promise.all([
     directories(),
     taskList({ ...filters, page }),
     canAdmin ? serviceAssignmentOptions() : Promise.resolve([]),
+    canAdmin ? serviceTemplates() : Promise.resolve([]),
   ]);
   const query = new URLSearchParams();
   for (const key of ["status", "priority", "assignee", "client"] as const)
@@ -48,6 +49,8 @@ export default async function Tasks({
           organizationId={organization.id}
           services={services}
           members={directory.members}
+          clients={directory.clients}
+          templates={templates}
         />
       )}
       <form className="filter-bar" action="/tasks" aria-label="Filter tasks by client, status and assignee">

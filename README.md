@@ -191,6 +191,8 @@ Add invitation and membership management UI, richer permission controls, searcha
 
 Owners/admins can assign a client's entire service, or selected services across multiple clients, through **Assign service work** on Tasks and client details. Select services/projects and teammates, then choose existing work only or existing work plus future defaults. The picker shows exact eligible task counts beyond the task table's page limit. Completed, cancelled and past-period tasks remain unchanged. See [bulk service assignments](docs/bulk-service-assignments.md) for behavior and rollout checks.
 
+For a client with no linked service, **Connect a service to this client** selects an existing service template, assigns its team and generates only that client's current service tasks. Clients with existing services use **Connect another service**. The client picker includes clients with no projects. See [connecting client services](docs/connect-client-services.md).
+
 The hosted Peak Leads workspace now contains the real four-client service framework. See [the exact import report](docs/client-import-2026-09-12.md) for inserted counts, service mappings, quantities, responsibilities, dates and validation evidence.
 
 The recurrence extension adds `service_templates`, `service_deliverables` and `managed_responsibilities`. Service projects link to templates; generated tasks snapshot a period and target range. Numerical delivery is tracked through actual completed quantities. Managed responsibilities have a status and note and never contribute to completion totals. Templates and service mappings require owner/admin rights; members can record quantities and responsibility status in their workspace.

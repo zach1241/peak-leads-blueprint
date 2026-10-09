@@ -51,6 +51,10 @@
   font-weight: 600;
 }
 
+.clientPicker {
+  margin-top: 20px;
+}
+
 .clientField select {
   min-width: 0;
   width: 100%;
