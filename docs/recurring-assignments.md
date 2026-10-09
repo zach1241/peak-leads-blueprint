@@ -1,6 +1,8 @@
 # Recurring task assignments
 
-Owners and admins can assign recurring SEO tasks to one person or several teammates using the existing assignee picker in Tasks and Delivery, or the task detail form. Select **This task and future occurrences** to save the selected people as that task series' default. Select **This task only** for a one-off cover arrangement. Choosing Unassigned with future scope clears the saved assignees too.
+Owners and admins can assign recurring SEO tasks to one person or several teammates using the existing assignee picker in Tasks or the task detail form. Select **This task and future occurrences** to save the selected people as that task series' default. Select **This task only** for a one-off cover arrangement. Choosing Unassigned with future scope clears the saved assignees too.
+
+For assigning whole services across one or several clients in one save, use **Assign service work** on Tasks or a client's detail page. See [bulk service assignments](bulk-service-assignments.md). This leaves the individual task controls available for exceptions.
 
 A service series is scoped to a project and deliverable definition. Two clients using the same SEO template have independent assignees, and different deliverables can have different teams. A manually repeating task uses its original task as the series identity; changes made from a child occurrence can update the default without rewriting the original task's history. Shared assignments use the existing multiple-assignee model; they are selected people, not a new named-team directory.
 

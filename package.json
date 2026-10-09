@@ -12,7 +12,8 @@
     "test:api": "node scripts/test-api.mjs",
     "dev:local": "node scripts/dev-local.mjs",
     "test:delivery": "node scripts/test-delivery.mjs",
-    "test:recurring-assignees": "node scripts/test-recurring-assignees.mjs"
+    "test:recurring-assignees": "node scripts/test-recurring-assignees.mjs",
+    "test:bulk-assignees": "node scripts/test-bulk-service-assignees.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

@@ -30,6 +30,40 @@ function recordId(form: FormData) {
 function refreshWork() {
   revalidatePath("/", "layout");
 }
+export async function bulkAssignServices(
+  _: WorkState,
+  form: FormData,
+): Promise<WorkState> {
+  const { db, organization, canAdmin } = await requireWorkspace();
+  if (!canAdmin) return { error: "Only owners and admins can assign service work." };
+  const parsed = z.object({
+    organization_id: z.uuid(),
+    project_ids: z.array(z.uuid()).min(1).max(1000),
+    assignees: z.array(z.uuid()).max(100),
+    assignment_scope: z.enum(["current", "future"]),
+  }).safeParse({
+    organization_id: form.get("organization_id"),
+    project_ids: form.getAll("project_ids"),
+    assignees: form.getAll("assignees"),
+    assignment_scope: form.get("assignment_scope"),
+  });
+  if (!parsed.success) return { error: "Select services, teammates and an assignment scope." };
+  if (parsed.data.organization_id !== organization.id)
+    return { error: "Your workspace changed. Refresh before assigning service work." };
+  if (!parsed.data.assignees.length && form.get("leave_unassigned") !== "on")
+    return { error: "Choose teammates or explicitly choose Leave unassigned." };
+  const projectIds = [...new Set(parsed.data.project_ids)];
+  const future = parsed.data.assignment_scope === "future";
+  const { data, error } = await db.rpc("set_service_assignees", {
+    p_organization_id: organization.id,
+    p_project_ids: projectIds,
+    p_assignees: [...new Set(parsed.data.assignees)],
+    p_apply_to_future: future,
+  });
+  if (error) return { error: errorMessage(error) };
+  refreshWork();
+  return { success: `${data ?? 0} current or upcoming ${data === 1 ? "task" : "tasks"} updated across ${projectIds.length} ${projectIds.length === 1 ? "service" : "services"}.${future ? " Future assignments saved too." : " Saved future assignments kept unchanged."}` };
+}
 export async function selectWorkspace(
   _: WorkState,
   form: FormData,

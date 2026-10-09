@@ -99,6 +99,13 @@ export function TaskForm({
             </label>
           ))}
         </fieldset>
+        {!task && (
+          <p className="data-note full-field">
+            New repeating tasks use their project’s saved service team when no teammates
+            are selected. To start an unassigned series, choose future occurrences with
+            an empty selection.
+          </p>
+        )}
         <label className="full-field">
           Apply assignments to
           <select name="assignment_scope" defaultValue="current">

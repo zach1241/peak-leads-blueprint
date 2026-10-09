@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { requireWorkspace } from "@/lib/data/workspace";
 import { directories, taskList, clientWorkSummary } from "@/lib/data/queries";
+import { serviceAssignmentOptions } from "@/lib/data/service-assignments";
+import { ServiceAssignmentEditor } from "@/components/work/service-assignment-editor";
 import { ClientForm } from "@/components/work/forms";
 import {
   PageHeading,
@@ -22,7 +24,7 @@ export default async function Client({
   if (!z.uuid().safeParse(id).success) notFound();
   const page = pageNumber((await searchParams).page);
   const { db, organization, canAdmin } = await requireWorkspace();
-  const [record, directory, tasks, projects, summary] = await Promise.all([
+  const [record, directory, tasks, projects, summary, services] = await Promise.all([
     db
       .from("clients")
       .select("*")
@@ -39,6 +41,7 @@ export default async function Client({
       .order("name")
       .limit(25),
     clientWorkSummary(id),
+    canAdmin ? serviceAssignmentOptions() : Promise.resolve([]),
   ]);
   if (record.error || projects.error)
     throw new Error("Unable to load client details.");
@@ -59,6 +62,14 @@ export default async function Client({
         </Link>
         <Badge value={client.status} />
       </div>
+      {canAdmin && (
+        <ServiceAssignmentEditor
+          organizationId={organization.id}
+          services={services.filter((service) => service.client_id === id)}
+          members={directory.members}
+          clientId={id}
+        />
+      )}
       <section className="panel section-gap">
         <div className="panel-heading">
           <h2>Packages / services ({projects.count ?? 0})</h2>

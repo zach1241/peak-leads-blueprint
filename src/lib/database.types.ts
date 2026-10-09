@@ -34,6 +34,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      service_assignment_rules: {
+        Row: { organization_id: string; project_id: string }
+        Insert: { organization_id: string; project_id: string }
+        Update: { organization_id?: string; project_id?: string }
+        Relationships: [
+          { foreignKeyName: "service_assignment_rules_organization_id_fkey"; columns: ["organization_id"]; isOneToOne: false; referencedRelation: "organizations"; referencedColumns: ["id"] },
+          { foreignKeyName: "service_assignment_rules_project_fkey"; columns: ["organization_id", "project_id"]; isOneToOne: true; referencedRelation: "projects"; referencedColumns: ["organization_id", "id"] }
+        ]
+      }
+      service_assignment_members: {
+        Row: { organization_id: string; project_id: string; user_id: string }
+        Insert: { organization_id: string; project_id: string; user_id: string }
+        Update: { organization_id?: string; project_id?: string; user_id?: string }
+        Relationships: [
+          { foreignKeyName: "service_assignment_members_rule_fkey"; columns: ["organization_id", "project_id"]; isOneToOne: false; referencedRelation: "service_assignment_rules"; referencedColumns: ["organization_id", "project_id"] },
+          { foreignKeyName: "service_assignment_members_member_fkey"; columns: ["organization_id", "user_id"]; isOneToOne: false; referencedRelation: "organization_members"; referencedColumns: ["organization_id", "user_id"] }
+        ]
+      }
       recurring_assignment_rules: {
         Row: { id: string; organization_id: string; project_id: string | null; deliverable_definition_id: string | null; source_task_id: string | null }
         Insert: { id?: string; organization_id: string; project_id?: string | null; deliverable_definition_id?: string | null; source_task_id?: string | null }
@@ -777,6 +795,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      set_service_assignees: {
+        Args: { p_organization_id: string; p_project_ids: string[]; p_assignees: string[]; p_apply_to_future: boolean }
+        Returns: number
+      }
+      service_assignment_options: {
+        Args: { p_organization_id: string }
+        Returns: { project_id: string; eligible_tasks: number; default_configured: boolean; default_assignees: string[] }[]
+      }
       generate_current_deliverables: {
         Args: { p_organization_id: string }
         Returns: number
