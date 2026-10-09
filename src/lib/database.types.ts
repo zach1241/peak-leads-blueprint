@@ -34,6 +34,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      recurring_assignment_rules: {
+        Row: { id: string; organization_id: string; project_id: string | null; deliverable_definition_id: string | null; source_task_id: string | null }
+        Insert: { id?: string; organization_id: string; project_id?: string | null; deliverable_definition_id?: string | null; source_task_id?: string | null }
+        Update: { id?: string; organization_id?: string; project_id?: string | null; deliverable_definition_id?: string | null; source_task_id?: string | null }
+        Relationships: [
+          { foreignKeyName: "recurring_assignment_rules_organization_id_fkey"; columns: ["organization_id"]; isOneToOne: false; referencedRelation: "organizations"; referencedColumns: ["id"] },
+          { foreignKeyName: "recurring_assignment_rules_project_fkey"; columns: ["organization_id", "project_id"]; isOneToOne: false; referencedRelation: "projects"; referencedColumns: ["organization_id", "id"] },
+          { foreignKeyName: "recurring_assignment_rules_deliverable_fkey"; columns: ["organization_id", "deliverable_definition_id"]; isOneToOne: false; referencedRelation: "service_deliverables"; referencedColumns: ["organization_id", "id"] },
+          { foreignKeyName: "recurring_assignment_rules_source_fkey"; columns: ["organization_id", "source_task_id"]; isOneToOne: false; referencedRelation: "tasks"; referencedColumns: ["organization_id", "id"] }
+        ]
+      }
+      recurring_assignment_members: {
+        Row: { organization_id: string; rule_id: string; user_id: string }
+        Insert: { organization_id: string; rule_id: string; user_id: string }
+        Update: { organization_id?: string; rule_id?: string; user_id?: string }
+        Relationships: [
+          { foreignKeyName: "recurring_assignment_members_rule_fkey"; columns: ["organization_id", "rule_id"]; isOneToOne: false; referencedRelation: "recurring_assignment_rules"; referencedColumns: ["organization_id", "id"] },
+          { foreignKeyName: "recurring_assignment_members_member_fkey"; columns: ["organization_id", "user_id"]; isOneToOne: false; referencedRelation: "organization_members"; referencedColumns: ["organization_id", "user_id"] }
+        ]
+      }
+
       sops: {
         Row: {
           id: string
@@ -761,11 +782,12 @@ export type Database = {
         Returns: number
       }
       set_task_assignees: {
-        Args: { p_organization_id: string; p_task_id: string; p_assignees: string[] }
+        Args: { p_organization_id: string; p_task_id: string; p_assignees: string[]; p_apply_to_future?: boolean }
         Returns: undefined
       }
       save_task: {
         Args: {
+          p_apply_to_future?: boolean
           p_recurrence_type?: string
           p_recurrence_start?: string | null
           p_recurrence_end?: string | null

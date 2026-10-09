@@ -72,8 +72,10 @@ export function AssigneeEditor({
   organizationId,
   assigned,
   members,
+  recurring = false,
 }: {
   taskId: string;
+  recurring?: boolean;
   organizationId: string;
   assigned: string[];
   members: Member[];
@@ -83,6 +85,7 @@ export function AssigneeEditor({
 
   const [saved, setSaved] = useState(assigned);
   const [selected, setSelected] = useState(assigned);
+  const [scope, setScope] = useState(recurring ? "future" : "current");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -114,6 +117,7 @@ export function AssigneeEditor({
 
     form.set("task_id", taskId);
     form.set("organization_id", organizationId);
+    form.set("assignment_scope", scope);
 
     selected.forEach((id) =>
       form.append("assignees", id),
@@ -128,7 +132,7 @@ export function AssigneeEditor({
       }
 
       setSaved(selected);
-      setMessage("Assignments saved.");
+      setMessage(scope === "future" ? "Assignments saved for this task and future occurrences." : "Assignments saved for this task only.");
       dialog.current?.close();
       router.refresh();
     } catch {
@@ -170,6 +174,7 @@ export function AssigneeEditor({
           });
 
           setSelected(saved);
+          setScope(recurring ? "future" : "current");
           setError("");
           setMessage("");
           dialog.current?.showModal();
@@ -225,7 +230,7 @@ export function AssigneeEditor({
             className={styles.options}
           >
             <legend>
-              Select workspace members
+              Select one person or several teammates
             </legend>
 
             <label>
@@ -272,6 +277,17 @@ export function AssigneeEditor({
               </p>
             )}
           </fieldset>
+
+          {recurring && (
+            <label className={styles.scope}>
+              Apply assignments to
+              <select value={scope} onChange={(event) => setScope(event.target.value)} disabled={pending}>
+                <option value="future">This task and future occurrences</option>
+                <option value="current">This task only</option>
+              </select>
+              <small>Future occurrences of this same client/service task use these teammates. Existing tasks stay unchanged. Choosing Unassigned also clears future assignments.</small>
+            </label>
+          )}
 
           {error && (
             <p

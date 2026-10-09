@@ -11,7 +11,8 @@
     "db:test": "npx supabase@2.117.0 test db",
     "test:api": "node scripts/test-api.mjs",
     "dev:local": "node scripts/dev-local.mjs",
-    "test:delivery": "node scripts/test-delivery.mjs"
+    "test:delivery": "node scripts/test-delivery.mjs",
+    "test:recurring-assignees": "node scripts/test-recurring-assignees.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

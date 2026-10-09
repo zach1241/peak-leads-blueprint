@@ -14,6 +14,8 @@ export type WorkState = { error?: string; success?: string };
 function errorMessage(error: { code?: string }) {
   if (error.code === "23514")
     return "For recurring deliverables, record the delivered quantity before marking done. Check other field limits too.";
+  if (error.code === "22023")
+    return "Future assignments require a repeating task. Choose This task only for a task that does not repeat.";
   if (error.code === "23505")
     return "That value already exists in this workspace. Choose a different slug.";
   if (error.code === "23503")
@@ -56,6 +58,8 @@ export async function saveTask(
     ...Object.fromEntries(form),
     assignees: form.getAll("assignees"),
   });
+  const assignmentScope = z.enum(["current", "future"]).safeParse(form.get("assignment_scope") ?? "current");
+  if (!assignmentScope.success) return { error: "Choose how to apply assignments." };
   const id = recordId(form);
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   if (!id.success) return { error: "Invalid task." };
@@ -71,6 +75,7 @@ export async function saveTask(
     p_project_id: v.project_id,
     p_client_id: v.client_id,
     p_assignees: [...new Set(v.assignees)],
+    p_apply_to_future: assignmentScope.data === "future",
     p_recurrence_type: v.recurrence_type,
     p_recurrence_start: v.recurrence_type === "none" ? null : v.recurrence_start || v.due_date,
     p_recurrence_end: v.recurrence_type === "none" ? null : v.recurrence_end || null,
@@ -176,14 +181,15 @@ export async function saveProfile(
 export async function updateTaskAssignees(form: FormData): Promise<WorkState> {
   const { db, organization, canAdmin } = await requireWorkspace();
   if (!canAdmin) return { error: "Only owners and admins can change assignments." };
-  const parsed = z.object({ task_id: z.uuid(), organization_id: z.uuid(), assignees: z.array(z.uuid()).max(100) }).safeParse({
-    task_id: form.get("task_id"), organization_id: form.get("organization_id"), assignees: form.getAll("assignees"),
+  const parsed = z.object({ task_id: z.uuid(), organization_id: z.uuid(), assignees: z.array(z.uuid()).max(100), assignment_scope: z.enum(["current", "future"]) }).safeParse({
+    task_id: form.get("task_id"), organization_id: form.get("organization_id"), assignees: form.getAll("assignees"), assignment_scope: form.get("assignment_scope") ?? "current",
   });
   if (!parsed.success) return { error: "Choose a valid task and workspace members." };
   if (parsed.data.organization_id !== organization.id) return { error: "Your workspace changed. Refresh before assigning this task." };
   const { error } = await db.rpc("set_task_assignees", {
     p_organization_id: organization.id,
     p_task_id: parsed.data.task_id,
+    p_apply_to_future: parsed.data.assignment_scope === "future",
     p_assignees: [...new Set(parsed.data.assignees)],
   });
   if (error) return { error: errorMessage(error) };

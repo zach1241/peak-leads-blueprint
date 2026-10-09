@@ -205,3 +205,7 @@ node scripts/validate-peak-leads.mjs /tmp/peak-validation.sql
 The import SQL requires an already-bootstrapped Peak Leads workspace and existing owner. It uses `authenticated` with RLS for data writes, checks existing names/aliases and service definitions, refuses ambiguous/conflicting mappings, and preserves existing work on reruns. Do not rerun bootstrap for an existing workspace. Execute reviewed SQL only against the intended project; never paste a database password into a source file or chat.
 
 `npm run build` uses the supported Webpack backend because this environment encountered an internal Turbopack cache failure. `npm run dev:local` uses `.next-local` so its locally compiled public Supabase configuration cannot overwrite hosted development artifacts. Both build directories are ignored by Git and ESLint.
+
+## Recurring assignees
+
+Assign one person or several teammates and select **This task and future occurrences** in the assignee picker or task form. Choose **This task only** for a one-off change. See [recurring assignment behavior and database rollout](docs/recurring-assignments.md). Apply the new migration before deploying the app; run `npm run test:recurring-assignees` against the local database.

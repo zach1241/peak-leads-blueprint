@@ -90,7 +90,7 @@
   width: 320px;
   max-width: calc(100vw - 32px);
   max-height: min(
-    360px,
+    520px,
     calc(100dvh - 32px)
   );
 
@@ -174,3 +174,6 @@
 
   clip-path: inset(50%);
 }
+.scope { display: grid; gap: 8px; margin-top: 12px; font-size: 12px; }
+.scope select { width: 100%; padding: 8px; color: var(--foreground); background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
+.scope small { color: var(--muted); line-height: 1.5; }

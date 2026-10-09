@@ -104,6 +104,7 @@ export function TaskTable({
                       key={`${task.id}:${[...assignedIds]
                         .sort()
                         .join(",")}`}
+                      recurring={Boolean(task.deliverable_definition_id || task.recurrence_parent_id || task.recurrence_type !== "none")}
                       taskId={task.id}
                       organizationId={assignmentOrganizationId}
                       assigned={assignedIds}

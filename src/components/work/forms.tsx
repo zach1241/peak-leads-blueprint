@@ -83,7 +83,7 @@ export function TaskForm({
           maxLength={20000}
         />
         <fieldset className="assignee-field full-field">
-          <legend>Assignees</legend>
+          <legend>Assignees · select one person or several teammates</legend>
           {directory.members.map((m) => (
             <label className="checkbox-label" key={m.id}>
               <input
@@ -99,6 +99,14 @@ export function TaskForm({
             </label>
           ))}
         </fieldset>
+        <label className="full-field">
+          Apply assignments to
+          <select name="assignment_scope" defaultValue="current">
+            <option value="current">This task only</option>
+            <option value="future">This task and future occurrences (repeating tasks only)</option>
+          </select>
+          <small>For repeating tasks, save the selected teammates for future occurrences. Existing tasks stay unchanged. An empty selection clears future assignments.</small>
+        </label>
       </div>
     </ActionForm>
   );
