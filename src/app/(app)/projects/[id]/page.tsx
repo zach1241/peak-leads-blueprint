@@ -61,18 +61,29 @@ export default async function Project({
         )}
       </div>
       <section className="panel form-panel">
-        {canAdmin ? <ProjectForm project={record.data} directory={directory} /> : <p>{record.data.description || "No project description."}</p>}
+        <h2>Project overview</h2>
+        <p className="task-description">
+          {record.data.description || "No project description."}
+        </p>
       </section>
       <section className="panel section-gap">
         <div className="panel-heading">
           <h2>Related tasks ({tasks.count})</h2>
-          {canAdmin && <Link className="text-link" href="/tasks/new">
-            Create task →
-          </Link>}
+          {canAdmin && (
+            <Link className="text-link" href={`/tasks/new?project=${id}`}>
+              Create task →
+            </Link>
+          )}
         </div>
         <TaskTable tasks={tasks.rows} members={directory.members} />
         <Pagination page={page} count={tasks.count} href={`/projects/${id}`} />
       </section>
+      {canAdmin && (
+        <details className="panel form-panel section-gap edit-details">
+          <summary>Edit project settings</summary>
+          <ProjectForm project={record.data} directory={directory} />
+        </details>
+      )}
     </>
   );
 }

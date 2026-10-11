@@ -6,24 +6,36 @@ import {
   Badge,
   Pagination,
   pageNumber,
+  SelectField,
 } from "@/components/work/shared";
 import { EmptyState } from "@/components/empty-state";
+import { clientStatuses, label } from "@/lib/data/constants";
+import { taskSearchPattern } from "@/lib/data/task-filters";
 export default async function Clients({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; status?: string; q?: string }>;
 }) {
-  const page = pageNumber((await searchParams).page);
+  const filters = await searchParams;
+  const page = pageNumber(filters.page);
+  const status = clientStatuses.find((value) => value === filters.status);
+  const q = typeof filters.q === "string" ? filters.q.trim().slice(0, 120) : "";
+  const query = new URLSearchParams();
+  if (status) query.set("status", status);
+  if (q) query.set("q", q);
   const { db, organization, canAdmin } = await requireWorkspace();
-  const { data, count, error } = await db
+  let clientQuery = db
     .from("clients")
     .select("*", { count: "exact" })
-    .eq("organization_id", organization.id)
+    .eq("organization_id", organization.id);
+  if (status) clientQuery = clientQuery.eq("status", status);
+  if (q) clientQuery = clientQuery.ilike("name", taskSearchPattern(q));
+  const { data, count, error } = await clientQuery
     .order("name")
     .order("id")
     .range((page - 1) * 25, page * 25 - 1);
   if (error) throw new Error("Unable to load clients.");
-  const summaries = await Promise.all(data.map(c => clientWorkSummary(c.id)));
+  const summaries = await Promise.all(data.map((c) => clientWorkSummary(c.id)));
   return (
     <>
       <PageHeading
@@ -32,6 +44,39 @@ export default async function Clients({
         href={canAdmin ? "/clients/new" : undefined}
         action="Create client"
       />
+      <form
+        key={query.toString()}
+        action="/clients"
+        className="filter-bar"
+        aria-label="Filter clients"
+      >
+        <label>
+          Search clients
+          <input
+            type="search"
+            name="q"
+            defaultValue={q}
+            placeholder="Search client names…"
+            maxLength={120}
+          />
+        </label>
+        <SelectField
+          name="status"
+          title="Status"
+          value={status}
+          empty="All statuses"
+          options={clientStatuses.map((value) => ({
+            value,
+            label: label(value),
+          }))}
+        />
+        <button className="button secondary">Apply filters</button>
+        {(status || q) && (
+          <Link className="text-link" href="/clients">
+            Clear filters
+          </Link>
+        )}
+      </form>
       <section className="panel">
         {data.length ? (
           <div
@@ -62,20 +107,42 @@ export default async function Clients({
                     <td>
                       <Badge value={c.status} />
                     </td>
-                    <td>{summaries[index].services.map(service => service.service_templates?.name || service.name).join(", ") || "No active services"}</td>
-                    <td>{summaries[index].done} / {summaries[index].total} done<small>All tasks · Cancelled excluded</small></td>
-                    <td><Link className="text-link" href={`/tasks?client=${c.id}`}>{summaries[index].outstanding} outstanding</Link></td>
+                    <td>
+                      {summaries[index].services
+                        .map(
+                          (service) =>
+                            service.service_templates?.name || service.name,
+                        )
+                        .join(", ") || "No active services"}
+                    </td>
+                    <td>
+                      {summaries[index].done} / {summaries[index].total} done
+                      <small>Current work · Cancelled excluded</small>
+                    </td>
+                    <td>
+                      <Link
+                        className="text-link"
+                        href={`/tasks?client=${c.id}`}
+                      >
+                        {summaries[index].outstanding} outstanding
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         ) : (
-          <EmptyState icon="clients" title="No clients yet">
-            An owner or admin can add your first client.
+          <EmptyState
+            icon="clients"
+            title={status || q ? "No matching clients" : "No clients yet"}
+          >
+            {status || q
+              ? "Clear filters or try a different name."
+              : "An owner or admin can add your first client."}
           </EmptyState>
         )}
-        <Pagination page={page} count={count ?? 0} href="/clients" />
+        <Pagination page={page} count={count ?? 0} href={`/clients?${query}`} />
       </section>
     </>
   );

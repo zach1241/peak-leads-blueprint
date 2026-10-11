@@ -46,26 +46,71 @@ export default async function Delivery({
     throw new Error("Unable to load service delivery.");
   if ((tasks.count ?? 0) > 1000)
     throw new Error("Delivery view exceeds 1,000 records. Filter by client.");
-  const grouped = new Map<string, { task: (typeof tasks.data)[number]; delivered: number; minimum: number; maximum: number; count: number; statuses: string[] }>();
+  const grouped = new Map<
+    string,
+    {
+      task: (typeof tasks.data)[number];
+      delivered: number;
+      minimum: number;
+      maximum: number;
+      count: number;
+      statuses: string[];
+    }
+  >();
   for (const task of tasks.data) {
-    const key = [task.project_id, task.deliverable_definition_id, task.contract_start, task.contract_end].join(":");
-    const group = grouped.get(key) ?? { task, delivered: 0, minimum: 0, maximum: 0, count: 0, statuses: [] };
-    group.delivered += task.completed_quantity; group.minimum += task.target_min ?? 0; group.maximum += task.target_max ?? 0; group.count++; group.statuses.push(task.status);
+    const key = [
+      task.project_id,
+      task.deliverable_definition_id,
+      task.contract_start,
+      task.contract_end,
+    ].join(":");
+    const group = grouped.get(key) ?? {
+      task,
+      delivered: 0,
+      minimum: 0,
+      maximum: 0,
+      count: 0,
+      statuses: [],
+    };
+    group.delivered += task.completed_quantity;
+    group.minimum += task.target_min ?? 0;
+    group.maximum += task.target_max ?? 0;
+    group.count++;
+    group.statuses.push(task.status);
     grouped.set(key, group);
   }
-  const contracts = [...grouped.values()].map(group => ({ ...group.task, completed_quantity: group.delivered, target_min: group.minimum, target_max: group.maximum, period_start: group.task.contract_start, period_end: group.task.contract_end, workCount: group.count,
-    status: group.delivered >= group.minimum ? "done" : group.statuses.includes("review") ? "review" : group.delivered > 0 || group.statuses.includes("in_progress") ? "in_progress" : "todo" }));
+  const contracts = [...grouped.values()].map((group) => ({
+    ...group.task,
+    completed_quantity: group.delivered,
+    target_min: group.minimum,
+    target_max: group.maximum,
+    period_start: group.task.contract_start,
+    period_end: group.task.contract_end,
+    workCount: group.count,
+    status:
+      group.delivered >= group.minimum
+        ? "done"
+        : group.statuses.includes("review")
+          ? "review"
+          : group.delivered > 0 || group.statuses.includes("in_progress")
+            ? "in_progress"
+            : "todo",
+  }));
   return (
     <>
       <PageHeading
         title="Service delivery"
         description="Quantity delivered against each current contractual target."
       />
-      {canAdmin && <DeliveryGenerator />}
+      {canAdmin && <DeliveryGenerator organizationId={organization.id} />}
       <form className="delivery-filter">
         <label>
           Client
-          <select name="client" defaultValue={client ?? ""}>
+          <select
+            key={client ?? "all"}
+            name="client"
+            defaultValue={client ?? ""}
+          >
             <option value="">All clients</option>
             {clients.data.map((c) => (
               <option key={c.id} value={c.id}>
@@ -160,7 +205,6 @@ export default async function Delivery({
           </section>
         );
       })}
-
     </>
   );
 }

@@ -38,21 +38,29 @@ export function Pagination({
   count: number;
   href: string;
 }) {
-  const separator = href.includes("?") ? "&" : "?";
+  const [path, search = ""] = href.split("?");
+  const lastPage = Math.max(1, Math.ceil(count / 25));
+  const pageHref = (next: number) => {
+    const query = new URLSearchParams(search);
+    query.set("page", String(next));
+    return `${path}?${query}`;
+  };
   return (
-    <div className="pagination">
+    <nav className="pagination" aria-label="Pagination">
       <span>
-        {count} records · Page {page} of {Math.max(1, Math.ceil(count / 25))}
+        {count === 0
+          ? "No records"
+          : page > lastPage
+            ? `${count} records · This page is empty`
+            : `${(page - 1) * 25 + 1}–${Math.min(page * 25, count)} of ${count} · Page ${page} of ${lastPage}`}
       </span>
       <div>
         {page > 1 && (
-          <Link href={`${href}${separator}page=${page - 1}`}>Previous</Link>
+          <Link href={pageHref(Math.min(page - 1, lastPage))}>← Previous</Link>
         )}
-        {page * 25 < count && (
-          <Link href={`${href}${separator}page=${page + 1}`}>Next</Link>
-        )}
+        {page * 25 < count && <Link href={pageHref(page + 1)}>Next →</Link>}
       </div>
-    </div>
+    </nav>
   );
 }
 export function pageNumber(value?: string) {
@@ -103,7 +111,11 @@ export function SelectField({
   return (
     <label>
       {title}
-      <select name={name} defaultValue={value ?? ""}>
+      <select
+        key={`${name}:${value ?? ""}`}
+        name={name}
+        defaultValue={value ?? ""}
+      >
         {empty && <option value="">{empty}</option>}
         {options.map((o) => (
           <option value={o.value} key={o.value}>

@@ -39,7 +39,9 @@ export function ServiceAssignmentEditor({
       try {
         return await bulkAssignServices(previous, form);
       } catch {
-        return { error: "Unable to save service assignments. Please try again." };
+        return {
+          error: "Unable to save service assignments. Please try again.",
+        };
       }
     },
     {},
@@ -52,10 +54,16 @@ export function ServiceAssignmentEditor({
       (client === noClient && service.client_id === null) ||
       service.client_id === client,
   );
-  const connectedTemplates = new Set(visibleServices.map((service) => service.service_template_id));
-  const availableTemplates = templates.filter((template) => !connectedTemplates.has(template.id));
+  const connectedTemplates = new Set(
+    visibleServices.map((service) => service.service_template_id),
+  );
+  const availableTemplates = templates.filter(
+    (template) => !connectedTemplates.has(template.id),
+  );
   const selected = new Set(selectedServices);
-  const chosenServices = visibleServices.filter((service) => selected.has(service.id));
+  const chosenServices = visibleServices.filter((service) =>
+    selected.has(service.id),
+  );
   const affectedTasks = chosenServices.reduce(
     (count, service) => count + service.eligible_tasks,
     0,
@@ -72,10 +80,12 @@ export function ServiceAssignmentEditor({
     (scope === "future" || affectedTasks > 0);
 
   return (
-    <details className={`panel ${styles.editor}`} open={Boolean(clientId)}>
+    <details className={`panel ${styles.editor}`}>
       <summary className={styles.summary}>
         <strong>Assign service work</strong>
-        <span>Connect a service to a client or assign their linked work in one save.</span>
+        <span>
+          Connect a service to a client or assign their linked work in one save.
+        </span>
       </summary>
       {!clientId && (
         <label className={`${styles.clientField} ${styles.clientPicker}`}>
@@ -93,14 +103,17 @@ export function ServiceAssignmentEditor({
             <option value="">Choose a client</option>
             <option value={allClients}>All clients</option>
             {clients.map((record) => (
-              <option key={record.id} value={record.id}>{record.name}</option>
+              <option key={record.id} value={record.id}>
+                {record.name}
+              </option>
             ))}
             {services.some((service) => service.client_id === null) && (
               <option value={noClient}>No client</option>
             )}
           </select>
           <small id={`${id}-client-help`}>
-            Choose a client to connect a service. Choose All clients to assign linked work across clients.
+            Choose a client to connect a service. Choose All clients to assign
+            linked work across clients.
           </small>
         </label>
       )}
@@ -135,8 +148,8 @@ export function ServiceAssignmentEditor({
           {clientId
             ? "For this client, select only the service you want to assign, then choose teammates. "
             : "Choose services or projects and teammates to replace their work assignments in one save. "}
-          Completed and past-period tasks stay unchanged. You can adjust individual
-          tasks afterward.
+          Completed and past-period tasks stay unchanged. You can adjust
+          individual tasks afterward.
         </p>
         <h3>Assign linked service work</h3>
         <fieldset disabled={pending || connecting} className={styles.controls}>
@@ -144,7 +157,8 @@ export function ServiceAssignmentEditor({
             <fieldset className={styles.choiceGroup}>
               <legend>Linked services / projects</legend>
               <p className={styles.hint}>
-                Choose one service for a specific assignment, or several to assign together.
+                Choose one service for a specific assignment, or several to
+                assign together.
               </p>
               <div className={styles.selectionActions}>
                 <button
@@ -152,7 +166,9 @@ export function ServiceAssignmentEditor({
                   className={styles.selectionButton}
                   disabled={!visibleServices.length}
                   onClick={() => {
-                    setSelectedServices(visibleServices.map((service) => service.id));
+                    setSelectedServices(
+                      visibleServices.map((service) => service.id),
+                    );
                     setShowResult(false);
                   }}
                 >
@@ -189,11 +205,13 @@ export function ServiceAssignmentEditor({
                     />
                     <span className={styles.choiceText}>
                       <strong>
-                        {client === allClients && `${service.client_name ?? "No client"} · `}
+                        {client === allClients &&
+                          `${service.client_name ?? "No client"} · `}
                         {service.name}
                       </strong>
                       <small>
-                        {service.eligible_tasks} eligible {service.eligible_tasks === 1 ? "task" : "tasks"}
+                        {service.eligible_tasks} eligible{" "}
+                        {service.eligible_tasks === 1 ? "task" : "tasks"}
                         {" · "}
                         {service.default_configured
                           ? `Default: ${service.default_assignees.map((memberId) => memberNames.get(memberId) ?? "Team member").join(", ") || "Unassigned"}`
@@ -206,14 +224,18 @@ export function ServiceAssignmentEditor({
                   <p className={styles.empty}>
                     {selectedClient
                       ? "No services are connected to this client yet. Use Connect a service above to get started."
-                      : client ? "No services or projects are linked here yet." : "Choose a client to see their linked services and projects."}
+                      : client
+                        ? "No services or projects are linked here yet."
+                        : "Choose a client to see their linked services and projects."}
                   </p>
                 )}
               </div>
             </fieldset>
             <fieldset className={styles.choiceGroup}>
               <legend>Teammates</legend>
-              <p className={styles.hint}>Select one person or several teammates.</p>
+              <p className={styles.hint}>
+                Select one person or several teammates.
+              </p>
               <div className={styles.choiceList}>
                 {members.map((member) => (
                   <label key={member.user_id} className={styles.choice}>
@@ -228,7 +250,9 @@ export function ServiceAssignmentEditor({
                         setSelectedMembers((current) =>
                           checked
                             ? [...current, member.user_id]
-                            : current.filter((value) => value !== member.user_id),
+                            : current.filter(
+                                (value) => value !== member.user_id,
+                              ),
                         );
                       }}
                     />
@@ -236,10 +260,16 @@ export function ServiceAssignmentEditor({
                       name={memberNames.get(member.user_id)!}
                       url={member.profiles?.avatar_url}
                     />
-                    <span className={styles.choiceText}>{memberNames.get(member.user_id)}</span>
+                    <span className={styles.choiceText}>
+                      {memberNames.get(member.user_id)}
+                    </span>
                   </label>
                 ))}
-                {!members.length && <p className={styles.empty}>No teammates in this workspace yet.</p>}
+                {!members.length && (
+                  <p className={styles.empty}>
+                    No teammates in this workspace yet.
+                  </p>
+                )}
               </div>
               <label className={`${styles.choice} ${styles.unassigned}`}>
                 <input
@@ -272,7 +302,10 @@ export function ServiceAssignmentEditor({
               />
               <span className={styles.choiceText}>
                 <strong>Selected work and future occurrences</strong>
-                <small>Update eligible tasks and save defaults for each selected service or project.</small>
+                <small>
+                  Update eligible tasks and save defaults for each selected
+                  service or project.
+                </small>
               </span>
             </label>
             <label className={styles.choice}>
@@ -285,30 +318,55 @@ export function ServiceAssignmentEditor({
               />
               <span className={styles.choiceText}>
                 <strong>Selected work only</strong>
-                <small>Update eligible existing tasks; keep future assignment defaults.</small>
+                <small>
+                  Update eligible existing tasks; keep future assignment
+                  defaults.
+                </small>
               </span>
             </label>
           </fieldset>
         </fieldset>
         <div className={styles.review} role="status">
           <strong>
-            {chosenServices.length} {chosenServices.length === 1 ? "service / project" : "services / projects"} selected
-            {" · "}{affectedTasks} existing {affectedTasks === 1 ? "task" : "tasks"} to update
+            {chosenServices.length}{" "}
+            {chosenServices.length === 1
+              ? "service / project"
+              : "services / projects"}{" "}
+            selected
+            {" · "}
+            {affectedTasks} existing {affectedTasks === 1 ? "task" : "tasks"} to
+            update
           </strong>
           {scope === "future" && chosenServices.length > 0 && (
-            <span>Future occurrences in the selected work will use {leaveUnassigned ? "no assignees" : "the selected teammates"}.</span>
+            <span>
+              Future occurrences in the selected work will use{" "}
+              {leaveUnassigned ? "no assignees" : "the selected teammates"}.
+            </span>
           )}
           {!canSubmit && (
             <span>
-              {scope === "current" && chosenServices.length > 0 && affectedTasks === 0
+              {scope === "current" &&
+              chosenServices.length > 0 &&
+              affectedTasks === 0
                 ? "No eligible existing tasks. Choose future occurrences to save service defaults."
                 : "Select services or projects and teammates, or explicitly choose Leave unassigned."}
             </span>
           )}
         </div>
-        {showResult && state.error && <p className="form-error" role="alert">{state.error}</p>}
-        {showResult && state.success && <p className="form-success" role="status">{state.success}</p>}
-        <button className="button primary" disabled={pending || connecting || !canSubmit}>
+        {showResult && state.error && (
+          <p className="form-error" role="alert">
+            {state.error}
+          </p>
+        )}
+        {showResult && state.success && (
+          <p className="form-success" role="status">
+            {state.success}
+          </p>
+        )}
+        <button
+          className="button primary"
+          disabled={pending || connecting || !canSubmit}
+        >
           {pending ? "Saving assignments…" : "Save service assignments"}
         </button>
       </form>

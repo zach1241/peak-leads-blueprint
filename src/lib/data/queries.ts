@@ -4,6 +4,12 @@ import { z } from "zod";
 import { notFound } from "next/navigation";
 import { requireWorkspace } from "./workspace";
 import { priorities, taskStatuses } from "./constants";
+import {
+  activeTaskScope,
+  normalizeTaskFilters,
+  taskSearchPattern,
+  workspaceCalendar,
+} from "./task-filters";
 export const directories = cache(async () => {
   const { db, organization } = await requireWorkspace();
   const [clients, projects, members] = await Promise.all([
@@ -49,6 +55,10 @@ export async function taskList({
   client,
   upcoming = false,
   limit = 25,
+  view,
+  q,
+  due,
+  sort,
 }: {
   page?: number;
   status?: string;
@@ -58,8 +68,23 @@ export async function taskList({
   client?: string;
   upcoming?: boolean;
   limit?: number;
+  view?: string;
+  q?: string;
+  due?: string;
+  sort?: string;
 } = {}) {
-  const { db, organization } = await requireWorkspace();
+  const { db, organization, user } = await requireWorkspace();
+  const filters = normalizeTaskFilters({
+    status,
+    priority,
+    assignee,
+    project,
+    client,
+    view,
+    q,
+    due,
+    sort,
+  });
   // Filter a separate embed so every assignee is still shown in each result.
   const fields =
     "*,projects(name),clients(name),service_deliverables(name,cadence),task_assignees(user_id),assigned:task_assignees(user_id)" as const;
@@ -67,25 +92,41 @@ export async function taskList({
     .from("tasks")
     .select(fields, { count: "exact" })
     .eq("organization_id", organization.id);
-  // One-time work stays visible; recurring work is scoped to its current period.
-  const today = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit",
-  }).format(new Date());
-  query = query.or(`and(deliverable_definition_id.is.null,recurrence_type.eq.none,recurrence_parent_id.is.null),and(period_start.lte.${today},period_end.gte.${today})`);
+  const { today, monday, sunday } = workspaceCalendar();
+  if (filters.view !== "history") query = query.or(activeTaskScope(today));
   const parsedStatus = z.enum(taskStatuses).safeParse(status);
   const parsedPriority = z.enum(priorities).safeParse(priority);
   if (parsedStatus.success) query = query.eq("status", parsedStatus.data);
   if (parsedPriority.success) query = query.eq("priority", parsedPriority.data);
-  if (assignee && z.uuid().safeParse(assignee).success)
-    query = query.eq("assigned.user_id", assignee).not("assigned", "is", null);
-  if (project) query = query.eq("project_id", project);
-  if (client) query = query.eq("client_id", client);
+  const selectedAssignee = filters.view === "mine" ? user.id : filters.assignee;
+  if (filters.view === "unassigned") query = query.is("assigned", null);
+  else if (selectedAssignee)
+    query = query
+      .eq("assigned.user_id", selectedAssignee)
+      .not("assigned", "is", null);
+  if (filters.project) query = query.eq("project_id", filters.project);
+  if (filters.client) query = query.eq("client_id", filters.client);
+  if (filters.q) query = query.ilike("title", taskSearchPattern(filters.q));
+  if (filters.view === "mine" || filters.view === "overdue")
+    query = query.not("status", "in", "(done,cancelled)");
+  if (filters.view === "overdue" || filters.due === "overdue")
+    query = query.lt("due_date", today).not("status", "in", "(done,cancelled)");
+  else if (filters.due === "today") query = query.eq("due_date", today);
+  else if (filters.due === "week")
+    query = query.gte("due_date", monday).lte("due_date", sunday);
+  else if (filters.due === "undated") query = query.is("due_date", null);
   if (upcoming) query = query.not("status", "in", "(done,cancelled)");
+  if (filters.sort === "newest" || filters.sort === "oldest")
+    query = query.order("created_at", { ascending: filters.sort === "oldest" });
+  else if (filters.sort === "title") query = query.order("title");
+  else query = query.order("due_date", { ascending: true, nullsFirst: false });
+  if (filters.sort !== "newest" && filters.sort !== "oldest")
+    query = query.order("created_at", { ascending: false });
+  const safePage =
+    Number.isInteger(page) && page > 0 && page <= 100000 ? page : 1;
   const result = await query
-    .order("due_date", { ascending: true, nullsFirst: false })
-    .order("created_at", { ascending: false })
     .order("id")
-    .range((page - 1) * limit, page * limit - 1);
+    .range((safePage - 1) * limit, safePage * limit - 1);
   if (result.error) throw new Error("Unable to load tasks.");
   return { rows: result.data ?? [], count: result.count ?? 0 };
 }
@@ -94,7 +135,9 @@ export async function taskDetail(id: string) {
   const { db, organization } = await requireWorkspace();
   const { data, error } = await db
     .from("tasks")
-    .select("*,task_assignees(user_id)")
+    .select(
+      "*,projects(name),clients(name),service_deliverables(name,cadence),task_assignees(user_id)",
+    )
     .eq("organization_id", organization.id)
     .eq("id", id)
     .maybeSingle();
@@ -117,17 +160,7 @@ export async function activity(page = 1, limit = 25) {
 export async function dashboardCounts() {
   const { db, user, organization } = await requireWorkspace();
   // Business calendar: Africa/Johannesburg, Monday–Sunday; dates are not timestamps.
-  const today = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Africa/Johannesburg",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-  const date = new Date(`${today}T12:00:00Z`);
-  const monday = new Date(date);
-  monday.setUTCDate(date.getUTCDate() - ((date.getUTCDay() + 6) % 7));
-  const sunday = new Date(monday);
-  sunday.setUTCDate(monday.getUTCDate() + 6);
+  const { today, monday, sunday } = workspaceCalendar();
   const myTasks = () =>
     db
       .from("tasks")
@@ -136,13 +169,12 @@ export async function dashboardCounts() {
         head: true,
       })
       .eq("organization_id", organization.id)
+      .or(activeTaskScope(today))
       .eq("task_assignees.user_id", user.id)
       .not("status", "in", "(done,cancelled)");
   const results = await Promise.all([
     myTasks(),
-    myTasks()
-      .gte("due_date", monday.toISOString().slice(0, 10))
-      .lte("due_date", sunday.toISOString().slice(0, 10)),
+    myTasks().gte("due_date", monday).lte("due_date", sunday),
     myTasks().lt("due_date", today),
     db
       .from("clients")
@@ -158,37 +190,54 @@ export async function dashboardCounts() {
 // Responsibilities live in their own table and never contribute to task totals.
 export async function taskStatusCounts() {
   const { db, organization } = await requireWorkspace();
-  const statuses = ["todo", "in_progress", "review", "done"] as const;
-  return Promise.all(statuses.map(async (status) => {
-    const { count, error } = await db.from("tasks").select("id", { count: "exact", head: true })
-      .eq("organization_id", organization.id).eq("status", status);
-    if (error) throw new Error("Unable to load task status overview.");
-    return { status, count: count ?? 0 };
-  }));
+  const { today } = workspaceCalendar();
+  const statuses = taskStatuses;
+  return Promise.all(
+    statuses.map(async (status) => {
+      const { count, error } = await db
+        .from("tasks")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", organization.id)
+        .or(activeTaskScope(today))
+        .eq("status", status);
+      if (error) throw new Error("Unable to load task status overview.");
+      return { status, count: count ?? 0 };
+    }),
+  );
 }
 
 // Exact counts avoid silently truncating a client's progress at a row limit.
 export const clientWorkSummary = cache(async (clientId: string) => {
   const { db, organization } = await requireWorkspace();
-  const today = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit",
-  }).format(new Date());
-  const base = () => db.from("tasks").select("id", { count: "exact", head: true })
-    .eq("organization_id", organization.id).eq("client_id", clientId);
+  const { today } = workspaceCalendar();
+  const base = () =>
+    db
+      .from("tasks")
+      .select("id", { count: "exact", head: true })
+      .eq("organization_id", organization.id)
+      .eq("client_id", clientId)
+      .or(activeTaskScope(today));
   const [total, done, overdue, review, services] = await Promise.all([
-    base().neq("status", "cancelled"), base().eq("status", "done"),
+    base().neq("status", "cancelled"),
+    base().eq("status", "done"),
     base().not("status", "in", "(done,cancelled)").lt("due_date", today),
     base().eq("status", "review"),
-    db.from("projects").select("id,name,service_templates(name)")
-      .eq("organization_id", organization.id).eq("client_id", clientId)
-      .eq("status", "active").order("name"),
+    db
+      .from("projects")
+      .select("id,name,service_templates(name)")
+      .eq("organization_id", organization.id)
+      .eq("client_id", clientId)
+      .eq("status", "active")
+      .order("name"),
   ]);
-  if ([total, done, overdue, review, services].some(result => result.error))
+  if ([total, done, overdue, review, services].some((result) => result.error))
     throw new Error("Unable to load client work summary.");
   return {
-    total: total.count ?? 0, done: done.count ?? 0,
+    total: total.count ?? 0,
+    done: done.count ?? 0,
     outstanding: (total.count ?? 0) - (done.count ?? 0),
-    overdue: overdue.count ?? 0, review: review.count ?? 0,
+    overdue: overdue.count ?? 0,
+    review: review.count ?? 0,
     services: services.data ?? [],
   };
 });

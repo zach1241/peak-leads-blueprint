@@ -16,6 +16,7 @@ export const projectStatuses = [
 ] as const;
 export const clientStatuses = ["active", "inactive", "archived"] as const;
 export function label(value: string) {
+  if (value === "todo") return "To do";
   return value.replaceAll("_", " ").replace(/^./, (c) => c.toUpperCase());
 }
 export function displayDate(value: string | null) {
