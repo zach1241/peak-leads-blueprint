@@ -3,7 +3,12 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { requireWorkspace, workspaceOptions, canUpdateTask } from "@/lib/data/workspace";
+import { taskStatuses } from "@/lib/data/constants";
+import {
+  requireWorkspace,
+  workspaceOptions,
+  canUpdateTask,
+} from "@/lib/data/workspace";
 import {
   taskSchema,
   clientSchema,
@@ -35,21 +40,27 @@ export async function bulkAssignServices(
   form: FormData,
 ): Promise<WorkState> {
   const { db, organization, canAdmin } = await requireWorkspace();
-  if (!canAdmin) return { error: "Only owners and admins can assign service work." };
-  const parsed = z.object({
-    organization_id: z.uuid(),
-    project_ids: z.array(z.uuid()).min(1).max(1000),
-    assignees: z.array(z.uuid()).max(100),
-    assignment_scope: z.enum(["current", "future"]),
-  }).safeParse({
-    organization_id: form.get("organization_id"),
-    project_ids: form.getAll("project_ids"),
-    assignees: form.getAll("assignees"),
-    assignment_scope: form.get("assignment_scope"),
-  });
-  if (!parsed.success) return { error: "Select services, teammates and an assignment scope." };
+  if (!canAdmin)
+    return { error: "Only owners and admins can assign service work." };
+  const parsed = z
+    .object({
+      organization_id: z.uuid(),
+      project_ids: z.array(z.uuid()).min(1).max(1000),
+      assignees: z.array(z.uuid()).max(100),
+      assignment_scope: z.enum(["current", "future"]),
+    })
+    .safeParse({
+      organization_id: form.get("organization_id"),
+      project_ids: form.getAll("project_ids"),
+      assignees: form.getAll("assignees"),
+      assignment_scope: form.get("assignment_scope"),
+    });
+  if (!parsed.success)
+    return { error: "Select services, teammates and an assignment scope." };
   if (parsed.data.organization_id !== organization.id)
-    return { error: "Your workspace changed. Refresh before assigning service work." };
+    return {
+      error: "Your workspace changed. Refresh before assigning service work.",
+    };
   if (!parsed.data.assignees.length && form.get("leave_unassigned") !== "on")
     return { error: "Choose teammates or explicitly choose Leave unassigned." };
   const projectIds = [...new Set(parsed.data.project_ids)];
@@ -62,28 +73,36 @@ export async function bulkAssignServices(
   });
   if (error) return { error: errorMessage(error) };
   refreshWork();
-  return { success: `${data ?? 0} current or upcoming ${data === 1 ? "task" : "tasks"} updated across ${projectIds.length} ${projectIds.length === 1 ? "service" : "services"}.${future ? " Future assignments saved too." : " Saved future assignments kept unchanged."}` };
+  return {
+    success: `${data ?? 0} current or upcoming ${data === 1 ? "task" : "tasks"} updated across ${projectIds.length} ${projectIds.length === 1 ? "service" : "services"}.${future ? " Future assignments saved too." : " Saved future assignments kept unchanged."}`,
+  };
 }
 export async function connectClientService(
   _: WorkState,
   form: FormData,
 ): Promise<WorkState> {
   const { db, organization, canAdmin } = await requireWorkspace();
-  if (!canAdmin) return { error: "Only owners and admins can connect client services." };
-  const parsed = z.object({
-    organization_id: z.uuid(),
-    client_id: z.uuid(),
-    service_template_id: z.uuid(),
-    assignees: z.array(z.uuid()).max(100),
-  }).safeParse({
-    organization_id: form.get("organization_id"),
-    client_id: form.get("client_id"),
-    service_template_id: form.get("service_template_id"),
-    assignees: form.getAll("assignees"),
-  });
-  if (!parsed.success) return { error: "Choose a client, an existing service and its teammates." };
+  if (!canAdmin)
+    return { error: "Only owners and admins can connect client services." };
+  const parsed = z
+    .object({
+      organization_id: z.uuid(),
+      client_id: z.uuid(),
+      service_template_id: z.uuid(),
+      assignees: z.array(z.uuid()).max(100),
+    })
+    .safeParse({
+      organization_id: form.get("organization_id"),
+      client_id: form.get("client_id"),
+      service_template_id: form.get("service_template_id"),
+      assignees: form.getAll("assignees"),
+    });
+  if (!parsed.success)
+    return { error: "Choose a client, an existing service and its teammates." };
   if (parsed.data.organization_id !== organization.id)
-    return { error: "Your workspace changed. Refresh before connecting a service." };
+    return {
+      error: "Your workspace changed. Refresh before connecting a service.",
+    };
   if (!parsed.data.assignees.length && form.get("leave_unassigned") !== "on")
     return { error: "Choose teammates or explicitly choose Leave unassigned." };
   const { data, error } = await db.rpc("connect_client_service", {
@@ -94,9 +113,12 @@ export async function connectClientService(
   });
   if (error) return { error: errorMessage(error) };
   const result = data?.[0];
-  if (!result) return { error: "Unable to connect this service. Refresh and try again." };
+  if (!result)
+    return { error: "Unable to connect this service. Refresh and try again." };
   refreshWork();
-  return { success: `Service connected to this client. ${result.tasks_assigned} ${result.tasks_assigned === 1 ? "task" : "tasks"} updated; ${result.tasks_generated} new ${result.tasks_generated === 1 ? "task" : "tasks"} generated.${parsed.data.assignees.length ? " Future occurrences use the selected teammates." : " Future occurrences remain unassigned."}` };
+  return {
+    success: `Service connected to this client. ${result.tasks_assigned} ${result.tasks_assigned === 1 ? "task" : "tasks"} updated; ${result.tasks_generated} new ${result.tasks_generated === 1 ? "task" : "tasks"} generated.${parsed.data.assignees.length ? " Future occurrences use the selected teammates." : " Future occurrences remain unassigned."}`,
+  };
 }
 export async function selectWorkspace(
   _: WorkState,
@@ -126,8 +148,11 @@ export async function saveTask(
     ...Object.fromEntries(form),
     assignees: form.getAll("assignees"),
   });
-  const assignmentScope = z.enum(["current", "future"]).safeParse(form.get("assignment_scope") ?? "current");
-  if (!assignmentScope.success) return { error: "Choose how to apply assignments." };
+  const assignmentScope = z
+    .enum(["current", "future"])
+    .safeParse(form.get("assignment_scope") ?? "current");
+  if (!assignmentScope.success)
+    return { error: "Choose how to apply assignments." };
   const id = recordId(form);
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   if (!id.success) return { error: "Invalid task." };
@@ -145,8 +170,10 @@ export async function saveTask(
     p_assignees: [...new Set(v.assignees)],
     p_apply_to_future: assignmentScope.data === "future",
     p_recurrence_type: v.recurrence_type,
-    p_recurrence_start: v.recurrence_type === "none" ? null : v.recurrence_start || v.due_date,
-    p_recurrence_end: v.recurrence_type === "none" ? null : v.recurrence_end || null,
+    p_recurrence_start:
+      v.recurrence_type === "none" ? null : v.recurrence_start || v.due_date,
+    p_recurrence_end:
+      v.recurrence_type === "none" ? null : v.recurrence_end || null,
   });
   if (error) return { error: errorMessage(error) };
   refreshWork();
@@ -158,31 +185,43 @@ export async function deleteTask(
 ): Promise<WorkState> {
   const { db, organization, canAdmin } = await requireWorkspace();
   if (!canAdmin) return { error: "Only owners and admins can delete tasks." };
-  const parsed = z.object({
-    id: z.uuid(),
-    organization_id: z.uuid(),
-  }).safeParse({
-    id: form.get("id"),
-    organization_id: form.get("organization_id"),
-  });
+  const parsed = z
+    .object({
+      id: z.uuid(),
+      organization_id: z.uuid(),
+    })
+    .safeParse({
+      id: form.get("id"),
+      organization_id: form.get("organization_id"),
+    });
   if (!parsed.success) return { error: "Choose a valid task and workspace." };
   if (parsed.data.organization_id !== organization.id)
-    return { error: "Your workspace changed. Refresh before deleting this task." };
+    return {
+      error: "Your workspace changed. Refresh before deleting this task.",
+    };
   if (form.get("confirm") !== "yes")
     return { error: "Confirm permanent deletion first." };
-  const { data, error } = await db.from("tasks")
+  const { data, error } = await db
+    .from("tasks")
     .delete()
     .eq("organization_id", organization.id)
     .eq("id", parsed.data.id)
     .select("id")
     .single();
   if (error?.code === "23503")
-    return { error: "This task has existing recurring occurrences and cannot be deleted. Keep their history; choose Does not repeat or change Repeat until in the task settings instead." };
+    return {
+      error:
+        "This task has existing recurring occurrences and cannot be deleted. Keep their history; choose Does not repeat or change Repeat until in the task settings instead.",
+    };
   if (error?.code === "42501")
     return { error: "You do not have permission to delete this task." };
   if (error?.code === "PGRST116" || (!error && !data))
-    return { error: "This task no longer exists or is unavailable in this workspace. Refresh and try again." };
-  if (error) return { error: "Unable to delete this task. Refresh and try again." };
+    return {
+      error:
+        "This task no longer exists or is unavailable in this workspace. Refresh and try again.",
+    };
+  if (error)
+    return { error: "Unable to delete this task. Refresh and try again." };
   refreshWork();
   redirect("/tasks");
 }
@@ -218,7 +257,8 @@ export async function saveProject(
   form: FormData,
 ): Promise<WorkState> {
   const { db, organization, user, canAdmin } = await requireWorkspace();
-  if (!canAdmin) return { error: "Only owners and admins can manage projects." };
+  if (!canAdmin)
+    return { error: "Only owners and admins can manage projects." };
   const parsed = projectSchema.safeParse(Object.fromEntries(form));
   const id = recordId(form);
   if (!parsed.success) return { error: parsed.error.issues[0].message };
@@ -282,12 +322,27 @@ export async function saveProfile(
 
 export async function updateTaskAssignees(form: FormData): Promise<WorkState> {
   const { db, organization, canAdmin } = await requireWorkspace();
-  if (!canAdmin) return { error: "Only owners and admins can change assignments." };
-  const parsed = z.object({ task_id: z.uuid(), organization_id: z.uuid(), assignees: z.array(z.uuid()).max(100), assignment_scope: z.enum(["current", "future"]) }).safeParse({
-    task_id: form.get("task_id"), organization_id: form.get("organization_id"), assignees: form.getAll("assignees"), assignment_scope: form.get("assignment_scope") ?? "current",
-  });
-  if (!parsed.success) return { error: "Choose a valid task and workspace members." };
-  if (parsed.data.organization_id !== organization.id) return { error: "Your workspace changed. Refresh before assigning this task." };
+  if (!canAdmin)
+    return { error: "Only owners and admins can change assignments." };
+  const parsed = z
+    .object({
+      task_id: z.uuid(),
+      organization_id: z.uuid(),
+      assignees: z.array(z.uuid()).max(100),
+      assignment_scope: z.enum(["current", "future"]),
+    })
+    .safeParse({
+      task_id: form.get("task_id"),
+      organization_id: form.get("organization_id"),
+      assignees: form.getAll("assignees"),
+      assignment_scope: form.get("assignment_scope") ?? "current",
+    });
+  if (!parsed.success)
+    return { error: "Choose a valid task and workspace members." };
+  if (parsed.data.organization_id !== organization.id)
+    return {
+      error: "Your workspace changed. Refresh before assigning this task.",
+    };
   const { error } = await db.rpc("set_task_assignees", {
     p_organization_id: organization.id,
     p_task_id: parsed.data.task_id,
@@ -301,14 +356,53 @@ export async function updateTaskAssignees(form: FormData): Promise<WorkState> {
 
 export async function updateTaskStatus(form: FormData): Promise<WorkState> {
   const { db, organization } = await requireWorkspace();
-  const parsed = z.object({ id: z.uuid(), status: z.enum(["todo", "in_progress", "review", "done"]), quantity: z.coerce.number().int().min(0).max(1000000).optional() }).safeParse(Object.fromEntries(form));
+  const parsed = z
+    .object({
+      id: z.uuid(),
+      expected_updated_at: z.iso.datetime({ offset: true }),
+      status: z.enum(taskStatuses),
+      quantity: z.coerce.number().int().min(0).max(1000000).optional(),
+    })
+    .safeParse(Object.fromEntries(form));
   if (!parsed.success) return { error: "Choose a valid task status." };
-  if (!await canUpdateTask(parsed.data.id)) return { error: "You can only update tasks assigned to you." };
+  if (!(await canUpdateTask(parsed.data.id)))
+    return { error: "You can only update tasks assigned to you." };
   if (parsed.data.quantity !== undefined) {
-    const { data: task, error } = await db.from("tasks").select("target_min").eq("organization_id", organization.id).eq("id", parsed.data.id).single();
-    if (error || task.target_min === null || parsed.data.status !== "done" || parsed.data.quantity < task.target_min) return { error: "Refresh this task before confirming its delivered quantity." };
+    const { data: task, error } = await db
+      .from("tasks")
+      .select("target_min")
+      .eq("organization_id", organization.id)
+      .eq("id", parsed.data.id)
+      .single();
+    if (
+      error ||
+      task.target_min === null ||
+      parsed.data.status !== "done" ||
+      parsed.data.quantity !== task.target_min
+    )
+      return {
+        error: "Refresh this task before confirming its delivered quantity.",
+      };
   }
-  const { error } = await db.from("tasks").update({ status: parsed.data.status, ...(parsed.data.quantity !== undefined ? { completed_quantity: parsed.data.quantity } : {}) }).eq("organization_id", organization.id).eq("id", parsed.data.id).select("id").single();
+  const { error } = await db
+    .from("tasks")
+    .update({
+      status: parsed.data.status,
+      ...(parsed.data.quantity !== undefined
+        ? { completed_quantity: parsed.data.quantity }
+        : {}),
+    })
+    .eq("organization_id", organization.id)
+    .eq("id", parsed.data.id)
+    .eq("updated_at", parsed.data.expected_updated_at)
+    .select("id")
+    .single();
+  if (error?.code === "PGRST116")
+    return {
+      error:
+        "This task changed since you opened it. Refresh before saving again.",
+    };
   if (error) return { error: errorMessage(error) };
-  refreshWork(); return { success: "Status saved." };
+  refreshWork();
+  return { success: "Status saved." };
 }

@@ -1,5 +1,11 @@
 # Peak Leads Operations
 
+The current task workspace includes focused views, title search, deadline/service filters,
+sorting, mobile task cards and stale status/quantity protection. Unfinished past periods
+remain visible in Current work; History includes every period. See
+[workspace polish and verification](docs/workspace-polish.md) and run `npm run test:workspace`
+for the filter, calendar and safe-navigation regression checks.
+
 Internal, organization-scoped task and operations platform for Peak Leads. Phase 2 adds the database, access controls, live dashboard, and practical task/client/project workflows to the Phase 1 authentication and visual system. Nothing is deployed or pushed automatically.
 
 ## Stack and setup

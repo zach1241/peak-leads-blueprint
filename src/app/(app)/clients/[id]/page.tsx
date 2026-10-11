@@ -3,7 +3,10 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { requireWorkspace } from "@/lib/data/workspace";
 import { directories, taskList, clientWorkSummary } from "@/lib/data/queries";
-import { serviceAssignmentOptions, serviceTemplates } from "@/lib/data/service-assignments";
+import {
+  serviceAssignmentOptions,
+  serviceTemplates,
+} from "@/lib/data/service-assignments";
 import { ServiceAssignmentEditor } from "@/components/work/service-assignment-editor";
 import { ClientForm } from "@/components/work/forms";
 import {
@@ -24,26 +27,27 @@ export default async function Client({
   if (!z.uuid().safeParse(id).success) notFound();
   const page = pageNumber((await searchParams).page);
   const { db, organization, canAdmin } = await requireWorkspace();
-  const [record, directory, tasks, projects, summary, services, templates] = await Promise.all([
-    db
-      .from("clients")
-      .select("*")
-      .eq("organization_id", organization.id)
-      .eq("id", id)
-      .maybeSingle(),
-    directories(),
-    taskList({ client: id, page }),
-    db
-      .from("projects")
-      .select("id,name,status", { count: "exact" })
-      .eq("organization_id", organization.id)
-      .eq("client_id", id)
-      .order("name")
-      .limit(25),
-    clientWorkSummary(id),
-    canAdmin ? serviceAssignmentOptions() : Promise.resolve([]),
-    canAdmin ? serviceTemplates() : Promise.resolve([]),
-  ]);
+  const [record, directory, tasks, projects, summary, services, templates] =
+    await Promise.all([
+      db
+        .from("clients")
+        .select("*")
+        .eq("organization_id", organization.id)
+        .eq("id", id)
+        .maybeSingle(),
+      directories(),
+      taskList({ client: id, page }),
+      db
+        .from("projects")
+        .select("id,name,status", { count: "exact" })
+        .eq("organization_id", organization.id)
+        .eq("client_id", id)
+        .order("name")
+        .limit(25),
+      clientWorkSummary(id),
+      canAdmin ? serviceAssignmentOptions() : Promise.resolve([]),
+      canAdmin ? serviceTemplates() : Promise.resolve([]),
+    ]);
   if (record.error || projects.error)
     throw new Error("Unable to load client details.");
   if (!record.data) notFound();
@@ -93,7 +97,16 @@ export default async function Client({
           <p className="data-note">Showing the first 25 projects.</p>
         )}
       </section>
-      <p className="data-note section-gap"><strong>{summary.outstanding} outstanding · {summary.done} / {summary.total} tasks done</strong> · All tasks, excluding cancelled. See Service Delivery for current-period quantity targets.</p>
+      <p className="data-note section-gap">
+        <strong>
+          {summary.outstanding} outstanding · {summary.done} / {summary.total}{" "}
+          tasks done
+        </strong>{" "}
+        · Current work and unfinished earlier periods, excluding cancelled.{" "}
+        <Link className="text-link" href={`/tasks?view=history&client=${id}`}>
+          View full task history →
+        </Link>
+      </p>
       <section className="panel section-gap">
         <div className="panel-heading">
           <h2>Tasks / deliverables ({tasks.count})</h2>
@@ -101,7 +114,8 @@ export default async function Client({
         <TaskTable tasks={tasks.rows} members={directory.members} />
         <Pagination page={page} count={tasks.count} href={`/clients/${id}`} />
       </section>
-            <details className="panel form-panel section-gap"><summary>Client contact details and settings</summary>
+      <details className="panel form-panel section-gap">
+        <summary>Client contact details and settings</summary>
         {canAdmin ? (
           <ClientForm client={client} />
         ) : (

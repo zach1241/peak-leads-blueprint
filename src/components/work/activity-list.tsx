@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Tables } from "@/lib/database.types";
 import type { Directory } from "@/lib/data/queries";
 import { EmptyState } from "@/components/empty-state";
+import { label } from "@/lib/data/constants";
 export function ActivityList({
   rows,
   members,
@@ -29,11 +30,13 @@ export function ActivityList({
         const taskId =
           typeof metadata.task_id === "string" ? metadata.task_id : null;
         const href =
-          row.entity_type === "comment"
-            ? taskId
-              ? `/tasks/${taskId}`
-              : null
-            : `/${row.entity_type}s/${row.entity_id}`;
+          row.action === "deleted" || row.action === "task_deleted"
+            ? null
+            : row.entity_type === "comment"
+              ? taskId
+                ? `/tasks/${taskId}`
+                : null
+              : `/${row.entity_type}s/${row.entity_id}`;
         const actor =
           members.find((m) => m.user_id === row.actor_id)?.profiles
             ?.full_name || (row.actor_id ? "Team member" : "System");
@@ -42,7 +45,7 @@ export function ActivityList({
             <span className="activity-dot" />
             <div>
               <p>
-                <strong>{actor}</strong> {row.action} {row.entity_type}
+                <strong>{actor}</strong> · {label(row.action)} {row.entity_type}
               </p>
               {href ? <Link href={href}>{title}</Link> : <span>{title}</span>}
               <time dateTime={row.created_at}>

@@ -26,37 +26,77 @@ export function AppShell({
   helpCount: number | null;
 }) {
   const pathname = usePathname();
-  const [navigationHelp, setNavigationHelp] = useState<{ pathname: string; initial: number | null; count: number | null }>();
-  const unresolvedHelp = navigationHelp?.pathname === pathname && navigationHelp.initial === helpCount ? navigationHelp.count : helpCount;
+  const [navigationHelp, setNavigationHelp] = useState<{
+    pathname: string;
+    initial: number | null;
+    count: number | null;
+  }>();
+  const unresolvedHelp =
+    navigationHelp?.pathname === pathname &&
+    navigationHelp.initial === helpCount
+      ? navigationHelp.count
+      : helpCount;
   useEffect(() => {
     const controller = new AbortController();
     fetch("/api/help-count", { cache: "no-store", signal: controller.signal })
-      .then(async response => { if (!response.ok) throw new Error("Count unavailable"); return response.json(); })
-      .then((data: { count: number }) => setNavigationHelp({ pathname, initial: helpCount, count: data.count }))
-      .catch(() => { if (!controller.signal.aborted) setNavigationHelp({ pathname, initial: helpCount, count: null }); });
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Count unavailable");
+        return response.json();
+      })
+      .then((data: { count: number }) =>
+        setNavigationHelp({ pathname, initial: helpCount, count: data.count }),
+      )
+      .catch(() => {
+        if (!controller.signal.aborted)
+          setNavigationHelp({ pathname, initial: helpCount, count: null });
+      });
     return () => controller.abort();
   }, [pathname, helpCount]);
   const dialog = useRef<HTMLDialogElement>(null);
   const [state, action, pending] = useActionState(logout, {});
-  const current =
-    navigation.find(
-      (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
-    )?.label ?? "Workspace";
+  const currentItem = navigation.find(
+    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
+  );
+  const current = currentItem?.label ?? "Workspace";
+  const nested = currentItem && pathname !== currentItem.href;
   const nav = (
     <nav aria-label="Main navigation">
-      <p className="nav-label">WORKSPACE</p>
-      {navigation.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          aria-current={pathname === item.href ? "page" : undefined}
-          className={`nav-item ${pathname === item.href ? "active" : ""}`}
-          onClick={() => dialog.current?.close()}
-        >
-          <Icon name={item.icon} />
-          {item.label}
-          {item.href === "/help-requests" && (unresolvedHelp === null ? <span className="help-count-unavailable" title="Help count unavailable">?</span> : unresolvedHelp > 0 ? <span className="help-count" aria-label={`${unresolvedHelp} unresolved help requests`}>{unresolvedHelp}</span> : null)}
-        </Link>
+      {["Work", "Resources", "Workspace"].map((group) => (
+        <div key={group} className="nav-group">
+          <p className="nav-label">{group}</p>
+          {navigation
+            .filter((item) => item.group === group)
+            .map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={
+                  currentItem?.href === item.href ? "page" : undefined
+                }
+                className={`nav-item ${currentItem?.href === item.href ? "active" : ""}`}
+                onClick={() => dialog.current?.close()}
+              >
+                <Icon name={item.icon} />
+                {item.label}
+                {item.href === "/help-requests" &&
+                  (unresolvedHelp === null ? (
+                    <span
+                      className="help-count-unavailable"
+                      title="Help count unavailable"
+                    >
+                      ?
+                    </span>
+                  ) : unresolvedHelp > 0 ? (
+                    <span
+                      className="help-count"
+                      aria-label={`${unresolvedHelp} unresolved help requests`}
+                    >
+                      {unresolvedHelp}
+                    </span>
+                  ) : null)}
+              </Link>
+            ))}
+        </div>
       ))}
     </nav>
   );
@@ -78,6 +118,7 @@ export function AppShell({
       </aside>
       <dialog
         ref={dialog}
+        aria-label="Workspace navigation"
         className="mobile-dialog"
         onClick={(e) => {
           if (e.target === e.currentTarget) dialog.current?.close();
@@ -107,40 +148,48 @@ export function AppShell({
             >
               ☰
             </button>
-            <span className="workspace-name">
+            <Link href="/dashboard" className="workspace-name">
               {workspaceName ?? "Workspace"}
-            </span>
+            </Link>
             <span className="slash">/</span>
-            <strong>{current}</strong>
+            {nested ? (
+              <>
+                <Link href={currentItem.href}>{current}</Link>
+                <span className="slash">/</span>
+                <strong>{pathname.endsWith("/new") ? "New" : "Details"}</strong>
+              </>
+            ) : (
+              <strong>{current}</strong>
+            )}
           </div>
           <div className="header-account-controls">
-          <ThemeControl variant="toggle" />
-          <details className="user-menu">
-            <summary aria-label="Open account menu">
-              <Avatar
-                key={`${avatarUrl ?? "initials"}:${avatarUpdatedAt ?? ""}`}
-                name={fullName || email}
-                url={avatarUrl}
-              />
-              <span className="account-label">My account</span>
-              <span aria-hidden="true">⌄</span>
-            </summary>
-            <div className="account-popover">
-              <small>SIGNED IN AS</small>
-              <p>{email}</p>
-              <Link href="/settings">Account settings</Link>
-              <form action={action}>
-                <button disabled={pending}>
-                  {pending ? "Signing out…" : "Sign out"}
-                </button>
-                {state.error && (
-                  <p className="form-error" role="alert">
-                    {state.error}
-                  </p>
-                )}
-              </form>
-            </div>
-          </details>
+            <ThemeControl variant="toggle" />
+            <details className="user-menu">
+              <summary aria-label="Open account menu">
+                <Avatar
+                  key={`${avatarUrl ?? "initials"}:${avatarUpdatedAt ?? ""}`}
+                  name={fullName || email}
+                  url={avatarUrl}
+                />
+                <span className="account-label">My account</span>
+                <span aria-hidden="true">⌄</span>
+              </summary>
+              <div className="account-popover">
+                <small>SIGNED IN AS</small>
+                <p>{email}</p>
+                <Link href="/settings">Account settings</Link>
+                <form action={action}>
+                  <button disabled={pending}>
+                    {pending ? "Signing out…" : "Sign out"}
+                  </button>
+                  {state.error && (
+                    <p className="form-error" role="alert">
+                      {state.error}
+                    </p>
+                  )}
+                </form>
+              </div>
+            </details>
           </div>
         </header>
         <main id="main-content" className="main-content">

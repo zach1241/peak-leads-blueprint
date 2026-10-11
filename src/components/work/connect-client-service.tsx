@@ -48,14 +48,27 @@ export function ConnectClientService({
     templates.some((template) => template.id === templateId) &&
     (selectedMembers.length > 0 || leaveUnassigned);
 
+  if (!templates.length)
+    return (
+      <p className={styles.description}>
+        All available services are already connected to {clientName}.
+      </p>
+    );
+
   return (
-    <details className={styles.section} open={!hasLinkedServices} aria-labelledby={`${id}-heading`}>
+    <details
+      className={styles.section}
+      open={!hasLinkedServices}
+      aria-labelledby={`${id}-heading`}
+    >
       <summary id={`${id}-heading`} className={styles.summary}>
-        {hasLinkedServices ? "Connect another service" : "Connect a service to this client"}
+        {hasLinkedServices
+          ? "Connect another service"
+          : "Connect a service to this client"}
       </summary>
       <p className={styles.description}>
-        Connect an existing service template to {clientName}, then assign its current
-        and future recurring work to your selected teammates.
+        Connect an existing service template to {clientName}, then assign its
+        current and future recurring work to your selected teammates.
       </p>
       <form
         action={formAction}
@@ -71,7 +84,10 @@ export function ConnectClientService({
       >
         <input type="hidden" name="organization_id" value={organizationId} />
         <input type="hidden" name="client_id" value={clientId} />
-        <fieldset disabled={pending || disabled} className={formStyles.controls}>
+        <fieldset
+          disabled={pending || disabled}
+          className={formStyles.controls}
+        >
           <label className={formStyles.clientField}>
             Available service template
             <select
@@ -82,20 +98,31 @@ export function ConnectClientService({
             >
               <option value="">Choose an existing service</option>
               {templates.map((template) => (
-                <option key={template.id} value={template.id}>{template.name}</option>
+                <option key={template.id} value={template.id}>
+                  {template.name}
+                </option>
               ))}
             </select>
-            <small>Services already connected to this client appear in the linked work below.</small>
+            <small>
+              Services already connected to this client appear in the linked
+              work below.
+            </small>
           </label>
           {!templates.length && (
-            <p className={formStyles.hint}>No additional existing service templates are available to connect.</p>
+            <p className={formStyles.hint}>
+              No additional existing service templates are available to connect.
+            </p>
           )}
           <fieldset className={formStyles.choiceGroup}>
             <legend>Assign this service to</legend>
-            <p className={formStyles.hint}>Select one person or several teammates.</p>
+            <p className={formStyles.hint}>
+              Select one person or several teammates.
+            </p>
             <div className={formStyles.choiceList}>
               {members.map((member) => {
-                const name = member.profiles?.full_name || `Member ${member.user_id.slice(0, 8)}`;
+                const name =
+                  member.profiles?.full_name ||
+                  `Member ${member.user_id.slice(0, 8)}`;
                 return (
                   <label key={member.user_id} className={formStyles.choice}>
                     <input
@@ -109,7 +136,9 @@ export function ConnectClientService({
                         setSelectedMembers((current) =>
                           checked
                             ? [...current, member.user_id]
-                            : current.filter((value) => value !== member.user_id),
+                            : current.filter(
+                                (value) => value !== member.user_id,
+                              ),
                         );
                       }}
                     />
@@ -118,7 +147,11 @@ export function ConnectClientService({
                   </label>
                 );
               })}
-              {!members.length && <p className={formStyles.empty}>No teammates in this workspace yet.</p>}
+              {!members.length && (
+                <p className={formStyles.empty}>
+                  No teammates in this workspace yet.
+                </p>
+              )}
             </div>
             <label className={`${formStyles.choice} ${formStyles.unassigned}`}>
               <input
@@ -139,9 +172,20 @@ export function ConnectClientService({
             </label>
           </fieldset>
         </fieldset>
-        {showResult && state.error && <p className="form-error" role="alert">{state.error}</p>}
-        {showResult && state.success && <p className="form-success" role="status">{state.success}</p>}
-        <button className="button primary" disabled={pending || disabled || !canSubmit}>
+        {showResult && state.error && (
+          <p className="form-error" role="alert">
+            {state.error}
+          </p>
+        )}
+        {showResult && state.success && (
+          <p className="form-success" role="status">
+            {state.success}
+          </p>
+        )}
+        <button
+          className="button primary"
+          disabled={pending || disabled || !canSubmit}
+        >
           {pending ? "Connecting service…" : "Connect service and assign work"}
         </button>
       </form>

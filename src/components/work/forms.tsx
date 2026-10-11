@@ -16,9 +16,13 @@ const options = (values: readonly string[]) =>
 export function TaskForm({
   directory,
   task,
+  initialProjectId,
+  initialClientId,
 }: {
   directory: Directory;
   task?: Awaited<ReturnType<typeof taskDetail>>;
+  initialProjectId?: string;
+  initialClientId?: string;
 }) {
   return (
     <ActionForm action={saveTask} submit={task ? "Save task" : "Create task"}>
@@ -49,27 +53,65 @@ export function TaskForm({
           type="date"
           value={task?.due_date}
         />
-        {!task?.deliverable_definition_id && !task?.recurrence_parent_id && <>
-          <SelectField name="recurrence_type" title="Repeat" value={task?.recurrence_type || "none"} options={[{value:"none",label:"Does not repeat"},{value:"weekly",label:"Weekly"},{value:"biweekly",label:"Every 2 weeks"},{value:"monthly",label:"Monthly"}]} />
-          <Field name="recurrence_start" title="Repeat anchor (defaults to due date)" type="date" value={task?.recurrence_start} />
-          <Field name="recurrence_end" title="Repeat until (optional)" type="date" value={task?.recurrence_end} />
-          <p className="data-note full-field">Repeats use the same day of the week or day of the month. Only the current occurrence is generated. Editing a repeating source affects newly generated occurrences; existing work is preserved. Choose Does not repeat to stop future generation.</p>
-        </>}
-        {task?.recurrence_parent_id && <p className="data-note">This is one occurrence. <Link className="text-link" href={`/tasks/${task.recurrence_parent_id}`}>Edit the original task</Link> to change recurrence.</p>}
+        {!task?.deliverable_definition_id && !task?.recurrence_parent_id && (
+          <>
+            <SelectField
+              name="recurrence_type"
+              title="Repeat"
+              value={task?.recurrence_type || "none"}
+              options={[
+                { value: "none", label: "Does not repeat" },
+                { value: "weekly", label: "Weekly" },
+                { value: "biweekly", label: "Every 2 weeks" },
+                { value: "monthly", label: "Monthly" },
+              ]}
+            />
+            <Field
+              name="recurrence_start"
+              title="Repeat anchor (defaults to due date)"
+              type="date"
+              value={task?.recurrence_start}
+            />
+            <Field
+              name="recurrence_end"
+              title="Repeat until (optional)"
+              type="date"
+              value={task?.recurrence_end}
+            />
+            <p className="data-note full-field">
+              Repeats use the same day of the week or day of the month. Only the
+              current occurrence is generated. Editing a repeating source
+              affects newly generated occurrences; existing work is preserved.
+              Choose Does not repeat to stop future generation.
+            </p>
+          </>
+        )}
+        {task?.recurrence_parent_id && (
+          <p className="data-note">
+            This is one occurrence.{" "}
+            <Link
+              className="text-link"
+              href={`/tasks/${task.recurrence_parent_id}`}
+            >
+              Edit the original task
+            </Link>{" "}
+            to change recurrence.
+          </p>
+        )}
         <SelectField
           name="project_id"
-          title="Project"
-          value={task?.project_id}
+          title="Service / project"
+          value={task?.project_id ?? initialProjectId}
           empty="No project"
           options={directory.projects.map((p) => ({
             value: p.id,
-            label: p.name,
+            label: `${p.name}${p.client_id ? ` · ${directory.clients.find((c) => c.id === p.client_id)?.name || "Client"}` : ""}`,
           }))}
         />
         <SelectField
           name="client_id"
           title="Direct client (optional)"
-          value={task?.client_id}
+          value={task?.client_id ?? initialClientId}
           empty="No direct client"
           options={directory.clients.map((c) => ({
             value: c.id,
@@ -94,25 +136,30 @@ export function TaskForm({
                   (a) => a.user_id === m.user_id,
                 )}
               />
-              {m.profiles?.full_name || "Team member"}{" "}
-              <small>{m.user_id.slice(0, 8)}</small>
+              {m.profiles?.full_name || "Team member"}
             </label>
           ))}
         </fieldset>
         {!task && (
           <p className="data-note full-field">
-            New repeating tasks use their project’s saved service team when no teammates
-            are selected. To start an unassigned series, choose future occurrences with
-            an empty selection.
+            New repeating tasks use their project’s saved service team when no
+            teammates are selected. To start an unassigned series, choose future
+            occurrences with an empty selection.
           </p>
         )}
         <label className="full-field">
           Apply assignments to
           <select name="assignment_scope" defaultValue="current">
             <option value="current">This task only</option>
-            <option value="future">This task and future occurrences (repeating tasks only)</option>
+            <option value="future">
+              This task and future occurrences (repeating tasks only)
+            </option>
           </select>
-          <small>For repeating tasks, save the selected teammates for future occurrences. Existing tasks stay unchanged. An empty selection clears future assignments.</small>
+          <small>
+            For repeating tasks, save the selected teammates for future
+            occurrences. Existing tasks stay unchanged. An empty selection
+            clears future assignments.
+          </small>
         </label>
       </div>
     </ActionForm>

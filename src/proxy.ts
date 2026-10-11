@@ -23,7 +23,7 @@ export async function proxy(request: NextRequest) {
   );
   if (!publicRoute && (error || !data?.claims)) {
     const destination = new URL("/login", request.url);
-    destination.searchParams.set("next", path);
+    destination.searchParams.set("next", `${path}${request.nextUrl.search}`);
     const redirect = NextResponse.redirect(destination);
     response.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
     redirect.headers.set("Cache-Control", "private, no-store");
