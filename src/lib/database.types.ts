@@ -795,6 +795,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      change_task_status_for_member: {
+        Args: {
+          p_organization_id: string
+          p_task_id: string
+          p_expected_updated_at: string
+          p_status: Database["public"]["Enums"]["task_status"]
+          p_quantity?: number | null
+        }
+        Returns: boolean
+      }
       connect_client_service: {
         Args: { p_organization_id: string; p_client_id: string; p_service_template_id: string; p_assignees: string[] }
         Returns: { project_id: string; tasks_assigned: number; tasks_generated: number }[]
