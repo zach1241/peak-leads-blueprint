@@ -6,6 +6,7 @@ import { requireWorkspace } from "./workspace";
 import { priorities, taskStatuses } from "./constants";
 import {
   monthTaskScope,
+  currentMonthDeliverableScope,
   normalizeTaskFilters,
   taskSearchPattern,
   workspaceCalendar,
@@ -99,7 +100,8 @@ export async function taskList({
   // Other task records remain available to other views and are never deleted.
   if (deliverablesOnly) query = query.not("deliverable_definition_id", "is", null);
   const { today, monday, sunday } = workspaceCalendar();
-  if (filters.view !== "history") query = query.or(monthTaskScope());
+  if (deliverablesOnly) query = query.or(currentMonthDeliverableScope());
+  else if (filters.view !== "history") query = query.or(monthTaskScope());
   const parsedStatus = z.enum(taskStatuses).safeParse(status);
   const parsedPriority = z.enum(priorities).safeParse(priority);
   if (parsedStatus.success) query = query.eq("status", parsedStatus.data);
