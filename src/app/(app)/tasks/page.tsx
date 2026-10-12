@@ -195,7 +195,7 @@ export default async function Tasks({
               title="Service / project"
               value={filters.project}
               empty="All services"
-              options={directory.projects.map((p) => ({
+              options={directory.projects.filter((p) => p.status === "active" && p.service_template_id && (!filters.client || p.client_id === filters.client)).map((p) => ({
                 value: p.id,
                 label: `${p.name}${p.client_id ? ` · ${clients.get(p.client_id) || "Client"}` : ""}`,
               }))}
