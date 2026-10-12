@@ -51,9 +51,14 @@ export async function setHelpStatus(_: WorkState, form: FormData): Promise<WorkS
 }
 export async function deleteResource(kind: "sops" | "help", _: WorkState, form: FormData): Promise<WorkState> {
   const { db, organization, canAdmin } = await requireWorkspace();
-  if (!canAdmin || !["sops", "help"].includes(kind)) return { error: "Only owners and admins can delete resources." };
+  if (!["sops", "help"].includes(kind)) return { error: "Unknown resource." };
+  if (kind === "sops" && !canAdmin) return { error: "Only admins can delete SOPs." };
   const id = z.uuid().safeParse(form.get("id"));
   if (!id.success || form.get("confirm") !== "yes") return { error: "Confirm deletion first." };
+  if (kind === "help" && !canAdmin) {
+    const { data: own } = await db.from("help_requests").select("requester_id").eq("organization_id", organization.id).eq("id", id.data).maybeSingle();
+    if (own?.requester_id !== (await requireWorkspace()).user.id) return {error:"You may only delete your own help requests."};
+  }
   const result = await db.from(kind === "sops" ? "sops" : "help_requests").delete().eq("organization_id", organization.id).eq("id", id.data).select("id").single();
   if (result.error) return { error: "Unable to delete this resource." };
   refresh(); redirect(kind === "sops" ? "/sops" : "/help-requests");
