@@ -356,53 +356,22 @@ export async function updateTaskAssignees(form: FormData): Promise<WorkState> {
 
 export async function updateTaskStatus(form: FormData): Promise<WorkState> {
   const { db, organization } = await requireWorkspace();
-  const parsed = z
-    .object({
-      id: z.uuid(),
-      expected_updated_at: z.iso.datetime({ offset: true }),
-      status: z.enum(taskStatuses),
-      quantity: z.coerce.number().int().min(0).max(1000000).optional(),
-    })
-    .safeParse(Object.fromEntries(form));
+  const parsed = z.object({
+    id: z.uuid(),
+    expected_updated_at: z.iso.datetime({ offset: true }),
+    status: z.enum(taskStatuses),
+    quantity: z.coerce.number().int().min(0).max(1000000).optional(),
+  }).safeParse(Object.fromEntries(form));
   if (!parsed.success) return { error: "Choose a valid task status." };
-  if (!(await canUpdateTask(parsed.data.id)))
-    return { error: "You can only update tasks assigned to you." };
-  if (parsed.data.quantity !== undefined) {
-    const { data: task, error } = await db
-      .from("tasks")
-      .select("target_min")
-      .eq("organization_id", organization.id)
-      .eq("id", parsed.data.id)
-      .single();
-    if (
-      error ||
-      task.target_min === null ||
-      parsed.data.status !== "done" ||
-      parsed.data.quantity !== task.target_min
-    )
-      return {
-        error: "Refresh this task before confirming its delivered quantity.",
-      };
-  }
-  const { error } = await db
-    .from("tasks")
-    .update({
-      status: parsed.data.status,
-      ...(parsed.data.quantity !== undefined
-        ? { completed_quantity: parsed.data.quantity }
-        : {}),
-    })
-    .eq("organization_id", organization.id)
-    .eq("id", parsed.data.id)
-    .eq("updated_at", parsed.data.expected_updated_at)
-    .select("id")
-    .single();
-  if (error?.code === "PGRST116")
-    return {
-      error:
-        "This task changed since you opened it. Refresh before saving again.",
-    };
-  if (error) return { error: errorMessage(error) };
+  const { data, error } = await db.rpc("change_task_status_for_member", {
+    p_organization_id: organization.id,
+    p_task_id: parsed.data.id,
+    p_expected_updated_at: parsed.data.expected_updated_at,
+    p_status: parsed.data.status,
+    p_quantity: parsed.data.quantity ?? null,
+  });
+  if (error) return { error: "Unable to update status. Check the delivered quantity or your permissions." };
+  if (!data) return { error: "This task changed. Refresh before updating its status." };
   refreshWork();
   return { success: "Status saved." };
 }

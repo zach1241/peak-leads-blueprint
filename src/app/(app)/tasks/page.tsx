@@ -278,7 +278,7 @@ export default async function Tasks({
             members={directory.members}
             assignmentOrganizationId={canAdmin ? organization.id : undefined}
             editableStatus
-            statusUserId={canAdmin ? undefined : user.id}
+            statusUserId={undefined}
             expandAll={Boolean(filters.client || filters.project || filters.q)}
             emptyDescription={
               filtered

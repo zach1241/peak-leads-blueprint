@@ -16,6 +16,7 @@ export function AppShell({
   avatarUrl,
   avatarUpdatedAt,
   helpCount,
+  canAdmin,
 }: {
   children: React.ReactNode;
   email: string;
@@ -24,6 +25,7 @@ export function AppShell({
   avatarUrl?: string;
   avatarUpdatedAt?: string;
   helpCount: number | null;
+  canAdmin: boolean;
 }) {
   const pathname = usePathname();
   const [navigationHelp, setNavigationHelp] = useState<{
@@ -65,7 +67,7 @@ export function AppShell({
         <div key={group} className="nav-group">
           <p className="nav-label">{group}</p>
           {navigation
-            .filter((item) => item.group === group)
+            .filter((item) => item.group === group && (!("adminOnly" in item) || canAdmin))
             .map((item) => (
               <Link
                 key={item.href}
