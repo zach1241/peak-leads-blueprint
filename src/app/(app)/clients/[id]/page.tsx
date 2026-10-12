@@ -36,10 +36,10 @@ export default async function Client({
         .eq("id", id)
         .maybeSingle(),
       directories(),
-      taskList({ client: id, page }),
+      taskList({ client: id, page, deliverablesOnly: true }),
       db
         .from("projects")
-        .select("id,name,status", { count: "exact" })
+        .select("id,name,status,service_template_id", { count: "exact" })
         .eq("organization_id", organization.id)
         .eq("client_id", id)
         .order("name")
@@ -62,9 +62,9 @@ export default async function Client({
         description="Packages, deliverables and progress for this client."
       />
       <div className="detail-badges">
-        <Link className="text-link" href={`/delivery?client=${id}`}>
+        {canAdmin && <Link className="text-link" href={`/delivery?client=${id}`}>
           View deliverables →
-        </Link>
+        </Link>}
         <Badge value={client.status} />
       </div>
       {canAdmin && (
@@ -79,18 +79,18 @@ export default async function Client({
       )}
       <section className="panel section-gap">
         <div className="panel-heading">
-          <h2>Packages / services ({projects.count ?? 0})</h2>
+          <h2>Active services</h2>
         </div>
         <ul className="record-list">
-          {projects.data.length ? (
-            projects.data.map((p) => (
+          {projects.data.some(p => p.status === "active" && p.service_template_id) ? (
+            projects.data.filter(p => p.status === "active" && p.service_template_id).map((p) => (
               <li key={p.id}>
-                <Link href={`/projects/${p.id}`}>{p.name}</Link>
+                {canAdmin ? <Link href={`/projects/${p.id}`}>{p.name}</Link> : <strong>{p.name}</strong>}
                 <Badge value={p.status} />
               </li>
             ))
           ) : (
-            <li>No projects linked yet.</li>
+            <li>No active services assigned to this client.</li>
           )}
         </ul>
         {(projects.count ?? 0) > 25 && (
@@ -103,8 +103,8 @@ export default async function Client({
           tasks done
         </strong>{" "}
         · This month’s work, excluding cancelled.{" "}
-        <Link className="text-link" href={`/tasks?view=history&client=${id}`}>
-          View full task history →
+        <Link className="text-link" href={`/tasks?client=${id}`}>
+          View this month’s tasks →
         </Link>
       </p>
       <section className="panel section-gap">
@@ -114,7 +114,7 @@ export default async function Client({
         <TaskTable tasks={tasks.rows} members={directory.members} />
         <Pagination page={page} count={tasks.count} href={`/clients/${id}`} />
       </section>
-      <details className="panel form-panel section-gap">
+      {canAdmin && <details className="panel form-panel section-gap">
         <summary>Client contact details and settings</summary>
         {canAdmin ? (
           <ClientForm client={client} />
@@ -143,7 +143,7 @@ export default async function Client({
             <dd>{client.notes || "No notes"}</dd>
           </dl>
         )}
-      </details>
+      </details>}
     </>
   );
 }
