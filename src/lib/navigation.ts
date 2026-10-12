@@ -16,6 +16,7 @@ export const navigation = [
     icon: "team",
     group: "Resources",
   },
+  { href: "/packages", label: "Services & Packages", icon: "projects", group: "Workspace", adminOnly: true },
   { href: "/team", label: "Team", icon: "team", group: "Workspace" },
   {
     href: "/activity",
