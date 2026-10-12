@@ -1,7 +1,7 @@
 export const navigation = [
   { href: "/dashboard", label: "Dashboard", icon: "overview", group: "Work" },
   { href: "/tasks", label: "Tasks", icon: "tasks", group: "Work" },
-  { href: "/clients", label: "Clients", icon: "clients", group: "Work", adminOnly: true },
+  { href: "/clients", label: "Clients", icon: "clients", group: "Work" },
   { href: "/projects", label: "Projects", icon: "projects", group: "Work", adminOnly: true },
   {
     href: "/delivery",
