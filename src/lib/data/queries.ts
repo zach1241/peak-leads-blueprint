@@ -23,7 +23,7 @@ export const directories = cache(async () => {
       .limit(1000),
     db
       .from("projects")
-      .select("id,name,client_id", { count: "exact" })
+      .select("id,name,client_id,status,service_template_id", { count: "exact" })
       .eq("organization_id", organization.id)
       .order("name")
       .limit(1000),
