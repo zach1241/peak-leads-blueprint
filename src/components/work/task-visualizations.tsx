@@ -5,7 +5,7 @@ import { workspaceMonth } from "@/lib/data/task-filters";
 import styles from "./task-visualizations.module.css";
 type Tasks = Awaited<ReturnType<typeof taskList>>["rows"];
 const groups = [
-  ["todo", "To do"], ["in_progress", "In progress"], ["review", "Review"],
+  ["backlog", "Backlog"], ["todo", "To do"], ["in_progress", "In progress"], ["review", "Review"],
   ["done", "Done"], ["cancelled", "Cancelled"]
 ] as const;
 function Entry({task,canEditStatus}:{task:Tasks[number];canEditStatus:boolean}){
@@ -62,7 +62,7 @@ export function TaskGantt({tasks}:{tasks:Tasks}){
       const end=Math.max(start,Math.min(days,Number((t.period_end||t.due_date||month.end).slice(8,10))));
       return <div key={t.id} className={styles.ganttRow}>
         <Link href={`/tasks/${t.id}`} className={styles.ganttLabel} title={t.title}>{t.service_deliverables?.name||t.title}<small>{t.clients?.name}</small></Link>
-        <div className={styles.track} style={{gridColumn:`2 / span ${days}`}}>
+        <div className={styles.track} style={{gridColumn:`2 / span ${days}`,gridTemplateColumns:`repeat(${days}, minmax(28px, 1fr))`}}>
         <div className={styles.bar} style={{gridColumn:`${start} / span ${end-start+1}`}} title={`${t.title}: ${t.period_start||t.due_date} to ${t.period_end||t.due_date}`}/>
         </div>
       </div>;
