@@ -73,3 +73,34 @@ export async function restoreDeliverable(_:WorkState,form:FormData):Promise<Work
  const id=z.uuid().safeParse(form.get("id"));if(!id.success)return {error:"Invalid deliverable."};
  try{const {db,organization}=await admin();const r=await db.from("service_deliverables").update({active:true}).eq("organization_id",organization.id).eq("id",id.data).select("id").single();if(r.error)return {error:"Unable to restore."};revalidatePath("/","layout");return {success:"Deliverable restored."};}catch(e){return {error:e instanceof Error?e.message:"Unable to restore."};}
 }
+
+export async function deleteCatalogItem(_:WorkState,form:FormData):Promise<WorkState>{
+ const parsed=z.object({
+  kind:z.enum(["deliverable","package"]),
+  id:z.uuid(),
+  confirm:z.literal("yes")
+ }).safeParse(Object.fromEntries(form));
+ if(!parsed.success)return {error:"Confirm permanent deletion first."};
+ try {
+  const {db,organization}=await admin();
+  const v=parsed.data;
+  if(v.kind==="deliverable"){
+   const used=await db.from("tasks").select("id").eq("organization_id",organization.id).eq("deliverable_definition_id",v.id).limit(1);
+   if(used.error)return {error:"Unable to verify task history."};
+   if(used.data?.length)return {error:"This deliverable has task history. Archive it instead to preserve reporting."};
+   const r=await db.from("service_deliverables").delete().eq("organization_id",organization.id).eq("id",v.id).select("id").single();
+   if(r.error)return {error:"This deliverable is referenced elsewhere. Archive it instead."};
+  }else{
+   const linked=await db.from("projects").select("id").eq("organization_id",organization.id).eq("service_template_id",v.id).limit(1);
+   if(linked.error)return {error:"Unable to verify linked clients."};
+   if(linked.data?.length)return {error:"This package is linked to a client. Remove the link and preserve the history, or archive the package."};
+   const definitions=await db.from("service_deliverables").select("id").eq("organization_id",organization.id).eq("service_template_id",v.id).limit(1);
+   if(definitions.error)return {error:"Unable to verify package deliverables."};
+   if(definitions.data?.length)return {error:"Delete unused deliverables inside this package first, or archive the package."};
+   const r=await db.from("service_templates").delete().eq("organization_id",organization.id).eq("id",v.id).select("id").single();
+   if(r.error)return {error:"Package could not be deleted. It may still be referenced by a client."};
+  }
+  revalidatePath("/","layout");
+  return {success:"Permanently deleted unused catalog item."};
+ }catch(e){return {error:e instanceof Error?e.message:"Unable to delete catalog item."};}
+}
