@@ -45,12 +45,6 @@ const views = [
     title: "Unassigned",
     description: "This month’s deliverables that need an owner.",
   },
-  {
-    value: "history",
-    title: "History",
-    description:
-      "Deliverables across all work periods, including completed and future items.",
-  },
 ];
 
 export default async function Tasks({
@@ -61,6 +55,8 @@ export default async function Tasks({
   const { organization, canAdmin, user } = await requireWorkspace();
   const raw = await searchParams;
   const filters = normalizeTaskFilters(raw);
+  // Legacy History links must not reopen prior-month work in this monthly queue.
+  if (filters.view === "history") filters.view = "active";
   const month = workspaceMonth();
   const grouped = filters.layout === "grouped";
   const page = pageNumber(typeof raw.page === "string" ? raw.page : undefined);
