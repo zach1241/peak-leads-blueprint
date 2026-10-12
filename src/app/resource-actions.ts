@@ -37,7 +37,7 @@ export async function saveResource(kind: "sops" | "help", form: FormData): Promi
   if (!values.description) return { error: "Describe where you need help." };
   const result = id ? await db.from("help_requests").update(values).eq("organization_id", organization.id).eq("id", id).select("id").single()
     : await db.from("help_requests").insert({ ...values, organization_id: organization.id, requester_id: user.id }).select("id").single();
-  if (result.error) return { error: "Unable to save. You can edit your own request while it is Open; admins can manage all requests." };
+  if (result.error) return { error: "Unable to save. You can edit your own requests; admins can manage all requests." };
   refresh(); return { success: "Help request saved.", id: result.data.id };
 }
 export async function setHelpStatus(_: WorkState, form: FormData): Promise<WorkState> {
