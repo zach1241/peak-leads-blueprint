@@ -1,4 +1,13 @@
 begin;
+-- Members cannot perform general task UPDATEs. Status changes use the secure RPC below.
+drop policy if exists assigned_status_update on public.tasks;
+-- Members may edit their own help requests; admins can edit all.
+drop policy if exists help_edit on public.help_requests;
+create policy help_edit on public.help_requests for update to authenticated
+using (private.has_role(organization_id, array['owner','admin']::public.organization_role[])
+ or (private.is_member(organization_id) and requester_id=auth.uid()))
+with check (private.has_role(organization_id, array['owner','admin']::public.organization_role[])
+ or (private.is_member(organization_id) and requester_id=auth.uid()));
 -- Members may remove only help requests they personally created.
 drop policy if exists help_delete on public.help_requests;
 create policy help_delete on public.help_requests for delete to authenticated
