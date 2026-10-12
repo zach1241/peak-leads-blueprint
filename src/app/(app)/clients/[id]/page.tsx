@@ -102,7 +102,7 @@ export default async function Client({
           {summary.outstanding} outstanding · {summary.done} / {summary.total}{" "}
           tasks done
         </strong>{" "}
-        · Current work and unfinished earlier periods, excluding cancelled.{" "}
+        · This month’s work, excluding cancelled.{" "}
         <Link className="text-link" href={`/tasks?view=history&client=${id}`}>
           View full task history →
         </Link>

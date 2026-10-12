@@ -27,7 +27,7 @@ export function TaskStatusOverview({
       <div className="panel-heading">
         <div>
           <h2>Work by status</h2>
-          <p>Current work and unfinished earlier periods.</p>
+          <p>This month’s work across your workspace.</p>
         </div>
       </div>
       <div className="task-status-chart">

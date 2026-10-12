@@ -15,12 +15,14 @@ import { TaskStatusOverview } from "@/components/work/task-status-overview";
 import { Icon } from "@/components/icon";
 import { TaskTable } from "@/components/work/task-table";
 import { ActivityList } from "@/components/work/activity-list";
+import { workspaceMonth } from "@/lib/data/task-filters";
 export default async function Dashboard() {
   const { user, organization, canAdmin } = await requireWorkspace();
+  const month = workspaceMonth();
   const [counts, upcoming, events, directory, statuses] = await Promise.all([
     dashboardCounts(),
     taskList({ assignee: user.id, upcoming: true, limit: 8 }),
-    activity(1, 5),
+    activity(1, 5, true),
     directories(),
     taskStatusCounts(),
   ]);
@@ -37,7 +39,7 @@ export default async function Dashboard() {
   const metrics = [
     {
       label: "My tasks",
-      hint: "Open tasks assigned to you",
+      hint: "Your open tasks this month",
       icon: "tasks",
       href: "/tasks?view=mine",
     },
@@ -49,7 +51,7 @@ export default async function Dashboard() {
     },
     {
       label: "Overdue",
-      hint: "Your open tasks before today",
+      hint: "This month’s tasks before today",
       icon: "activity",
       href: `/tasks?view=overdue&assignee=${user.id}`,
     },
@@ -68,7 +70,10 @@ export default async function Dashboard() {
             {organization.name.toUpperCase()} · YOUR DAY, AT A GLANCE
           </span>
           <h1>Let’s move work forward.</h1>
-          <p>A clear view of your priorities, clients, and team.</p>
+          <p>
+            {month.label} · A clear view of this month’s clients, services, and
+            team.
+          </p>
         </div>
         {canAdmin && (
           <Link className="button primary" href="/tasks/new">
@@ -89,14 +94,14 @@ export default async function Dashboard() {
         ))}
       </section>
       <p className="data-note">
-        Live workspace totals · Calendar dates use South Africa time. Done and
-        cancelled tasks are excluded.
+        {month.label} · Calendar dates use South Africa time. Done and cancelled
+        tasks are excluded.
       </p>
       <section className="panel section-gap">
         <div className="panel-heading">
           <div>
             <h2>Your next priorities</h2>
-            <p>Overdue work first, then upcoming deadlines.</p>
+            <p>This month’s overdue work first, then upcoming deadlines.</p>
           </div>
           <Link className="text-link" href="/tasks?view=mine">
             View my tasks →

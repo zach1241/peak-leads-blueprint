@@ -19,6 +19,7 @@ export type TaskFilters = {
   client: string;
   due: string;
   sort: string;
+  layout: "grouped" | "list";
 };
 
 export function workspaceCalendar(now = new Date()) {
@@ -39,10 +40,30 @@ export function workspaceCalendar(now = new Date()) {
   };
 }
 
-// Include unfinished work from past periods and undated repeating sources.
-// Historical completed occurrences remain accessible through History.
-export function activeTaskScope(today: string) {
-  return `and(period_start.is.null,period_end.is.null),and(period_start.lte.${today},period_end.gte.${today}),and(period_end.lt.${today},status.not.in.(done,cancelled))`;
+export function workspaceMonth(now = new Date()) {
+  const { today } = workspaceCalendar(now);
+  const [year, month] = today.split("-").map(Number);
+  const start = `${today.slice(0, 7)}-01`;
+  const end = new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
+  const next = new Date(Date.UTC(year, month, 1)).toISOString().slice(0, 10);
+  return {
+    start,
+    end,
+    startedAt: new Date(`${start}T00:00:00+02:00`).toISOString(),
+    endedAt: new Date(`${next}T00:00:00+02:00`).toISOString(),
+    label: new Intl.DateTimeFormat("en-ZA", {
+      month: "long",
+      year: "numeric",
+      timeZone: "Africa/Johannesburg",
+    }).format(now),
+  };
+}
+
+// A work period takes precedence over its deadline or creation date. Weekly
+// periods crossing the month boundary belong to both months. New undated work
+// remains actionable; older undated work is available through History.
+export function monthTaskScope(month = workspaceMonth()) {
+  return `and(period_start.lte.${month.end},period_end.gte.${month.start}),and(period_start.is.null,period_end.is.null,due_date.gte.${month.start},due_date.lte.${month.end}),and(period_start.is.null,period_end.is.null,due_date.is.null,created_at.gte.${month.startedAt},created_at.lt.${month.endedAt})`;
 }
 
 const uuid = (value: unknown) =>
@@ -63,6 +84,8 @@ export function normalizeTaskFilters(
     client: uuid(raw.client),
     due: choice(raw.due, ["today", "week", "overdue", "undated"]),
     sort: choice(raw.sort, ["due", "newest", "oldest", "title"], "due"),
+    layout: choice(raw.layout, ["grouped", "list"], "grouped") as
+      "grouped" | "list",
   };
 }
 
@@ -72,6 +95,7 @@ export function taskFilterParams(filters: TaskFilters) {
     if (
       value &&
       !(key === "view" && value === "active") &&
+      !(key === "layout" && value === "grouped") &&
       !(key === "sort" && value === "due")
     )
       query.set(key, value);

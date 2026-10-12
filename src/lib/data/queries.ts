@@ -5,10 +5,11 @@ import { notFound } from "next/navigation";
 import { requireWorkspace } from "./workspace";
 import { priorities, taskStatuses } from "./constants";
 import {
-  activeTaskScope,
+  monthTaskScope,
   normalizeTaskFilters,
   taskSearchPattern,
   workspaceCalendar,
+  workspaceMonth,
 } from "./task-filters";
 export const directories = cache(async () => {
   const { db, organization } = await requireWorkspace();
@@ -93,7 +94,7 @@ export async function taskList({
     .select(fields, { count: "exact" })
     .eq("organization_id", organization.id);
   const { today, monday, sunday } = workspaceCalendar();
-  if (filters.view !== "history") query = query.or(activeTaskScope(today));
+  if (filters.view !== "history") query = query.or(monthTaskScope());
   const parsedStatus = z.enum(taskStatuses).safeParse(status);
   const parsedPriority = z.enum(priorities).safeParse(priority);
   if (parsedStatus.success) query = query.eq("status", parsedStatus.data);
@@ -107,7 +108,7 @@ export async function taskList({
   if (filters.project) query = query.eq("project_id", filters.project);
   if (filters.client) query = query.eq("client_id", filters.client);
   if (filters.q) query = query.ilike("title", taskSearchPattern(filters.q));
-  if (filters.view === "mine" || filters.view === "overdue")
+  if (["mine", "overdue", "unassigned"].includes(filters.view))
     query = query.not("status", "in", "(done,cancelled)");
   if (filters.view === "overdue" || filters.due === "overdue")
     query = query.lt("due_date", today).not("status", "in", "(done,cancelled)");
@@ -130,6 +131,24 @@ export async function taskList({
   if (result.error) throw new Error("Unable to load tasks.");
   return { rows: result.data ?? [], count: result.count ?? 0 };
 }
+
+// Group the entire matching set. Pagination of individual rows would scatter a
+// client's services across pages and make group totals misleading.
+export async function taskListAll(
+  filters: Parameters<typeof taskList>[0] = {},
+) {
+  const first = await taskList({ ...filters, page: 1, limit: 1000 });
+  const extraPages = Math.max(0, Math.ceil(first.count / 1000) - 1);
+  const rest = await Promise.all(
+    Array.from({ length: extraPages }, (_, index) =>
+      taskList({ ...filters, page: index + 2, limit: 1000 }),
+    ),
+  );
+  return {
+    rows: [...first.rows, ...rest.flatMap((result) => result.rows)],
+    count: first.count,
+  };
+}
 export async function taskDetail(id: string) {
   if (!z.uuid().safeParse(id).success) notFound();
   const { db, organization } = await requireWorkspace();
@@ -145,12 +164,19 @@ export async function taskDetail(id: string) {
   if (!data) notFound();
   return data;
 }
-export async function activity(page = 1, limit = 25) {
+export async function activity(page = 1, limit = 25, thisMonth = false) {
   const { db, organization } = await requireWorkspace();
-  const { data, error, count } = await db
+  let query = db
     .from("activity_logs")
     .select("*", { count: "exact" })
-    .eq("organization_id", organization.id)
+    .eq("organization_id", organization.id);
+  if (thisMonth) {
+    const month = workspaceMonth();
+    query = query
+      .gte("created_at", month.startedAt)
+      .lt("created_at", month.endedAt);
+  }
+  const { data, error, count } = await query
     .order("created_at", { ascending: false })
     .order("id")
     .range((page - 1) * limit, page * limit - 1);
@@ -169,7 +195,7 @@ export async function dashboardCounts() {
         head: true,
       })
       .eq("organization_id", organization.id)
-      .or(activeTaskScope(today))
+      .or(monthTaskScope())
       .eq("task_assignees.user_id", user.id)
       .not("status", "in", "(done,cancelled)");
   const results = await Promise.all([
@@ -190,7 +216,6 @@ export async function dashboardCounts() {
 // Responsibilities live in their own table and never contribute to task totals.
 export async function taskStatusCounts() {
   const { db, organization } = await requireWorkspace();
-  const { today } = workspaceCalendar();
   const statuses = taskStatuses;
   return Promise.all(
     statuses.map(async (status) => {
@@ -198,7 +223,7 @@ export async function taskStatusCounts() {
         .from("tasks")
         .select("id", { count: "exact", head: true })
         .eq("organization_id", organization.id)
-        .or(activeTaskScope(today))
+        .or(monthTaskScope())
         .eq("status", status);
       if (error) throw new Error("Unable to load task status overview.");
       return { status, count: count ?? 0 };
@@ -216,7 +241,7 @@ export const clientWorkSummary = cache(async (clientId: string) => {
       .select("id", { count: "exact", head: true })
       .eq("organization_id", organization.id)
       .eq("client_id", clientId)
-      .or(activeTaskScope(today));
+      .or(monthTaskScope());
   const [total, done, overdue, review, services] = await Promise.all([
     base().neq("status", "cancelled"),
     base().eq("status", "done"),

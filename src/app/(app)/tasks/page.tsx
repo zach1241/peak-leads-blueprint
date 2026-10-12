@@ -2,10 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireWorkspace } from "@/lib/data/workspace";
 import { DeliveryGenerator } from "@/components/work/delivery-generator";
-import { directories, taskList } from "@/lib/data/queries";
+import { directories, taskList, taskListAll } from "@/lib/data/queries";
 import {
   normalizeTaskFilters,
   taskFilterParams,
+  workspaceMonth,
 } from "@/lib/data/task-filters";
 import {
   serviceAssignmentOptions,
@@ -20,29 +21,29 @@ import {
   SelectField,
 } from "@/components/work/shared";
 import { TaskTable } from "@/components/work/task-table";
+import { GroupedTaskList } from "@/components/work/grouped-task-list";
 
 const views = [
   {
     value: "active",
-    title: "Current work",
+    title: "This month",
     description:
-      "Current periods and unfinished earlier work. Completed past periods are in History.",
+      "Tasks for this month, organized around your clients and services.",
   },
   {
     value: "mine",
     title: "My tasks",
-    description:
-      "Your unfinished work, including tasks carried over from earlier periods.",
+    description: "Your unfinished tasks for this month.",
   },
   {
     value: "overdue",
     title: "Overdue",
-    description: "Unfinished tasks with a deadline before today.",
+    description: "This month’s unfinished tasks with a deadline before today.",
   },
   {
     value: "unassigned",
     title: "Unassigned",
-    description: "Current and carried-over work that needs an owner.",
+    description: "This month’s work that needs an owner.",
   },
   {
     value: "history",
@@ -60,16 +61,18 @@ export default async function Tasks({
   const { organization, canAdmin, user } = await requireWorkspace();
   const raw = await searchParams;
   const filters = normalizeTaskFilters(raw);
+  const month = workspaceMonth();
+  const grouped = filters.layout === "grouped";
   const page = pageNumber(typeof raw.page === "string" ? raw.page : undefined);
   const [directory, tasks, services, templates] = await Promise.all([
     directories(),
-    taskList({ ...filters, page }),
+    grouped ? taskListAll(filters) : taskList({ ...filters, page }),
     canAdmin ? serviceAssignmentOptions() : Promise.resolve([]),
     canAdmin ? serviceTemplates() : Promise.resolve([]),
   ]);
   const query = taskFilterParams(filters);
   const lastPage = Math.max(1, Math.ceil(tasks.count / 25));
-  if (page > lastPage) {
+  if (!grouped && page > lastPage) {
     query.set("page", String(lastPage));
     redirect(`/tasks?${query}`);
   }
@@ -90,32 +93,54 @@ export default async function Tasks({
     <>
       <PageHeading
         title="Tasks"
-        description="Find the next step, give it an owner, and keep work moving."
+        description={`${month.label} · Choose a client, then focus on their services and owners.`}
         href={canAdmin ? "/tasks/new" : undefined}
         action="Create task"
       />
-      <nav className="task-views" aria-label="Task views">
-        {views.map((view) => {
-          const params = new URLSearchParams(query);
-          params.set("view", view.value);
-          if (view.value === "mine" || view.value === "unassigned")
-            params.delete("assignee");
-          if (
-            (view.value === "mine" || view.value === "overdue") &&
-            ["done", "cancelled"].includes(filters.status)
-          )
-            params.delete("status");
-          return (
-            <Link
-              key={view.value}
-              href={`/tasks?${params}`}
-              aria-current={filters.view === view.value ? "page" : undefined}
-            >
-              {view.title}
-            </Link>
-          );
-        })}
-      </nav>
+      <div className="task-view-controls">
+        <nav className="task-views" aria-label="Task views">
+          {views.map((view) => {
+            const params = new URLSearchParams(query);
+            params.set("view", view.value);
+            if (view.value === "mine" || view.value === "unassigned")
+              params.delete("assignee");
+            if (
+              ["mine", "overdue", "unassigned"].includes(view.value) &&
+              ["done", "cancelled"].includes(filters.status)
+            )
+              params.delete("status");
+            return (
+              <Link
+                key={view.value}
+                href={`/tasks?${params}`}
+                aria-current={filters.view === view.value ? "page" : undefined}
+              >
+                {view.title}
+              </Link>
+            );
+          })}
+        </nav>
+        <nav className="task-layouts" aria-label="Task layout">
+          {[
+            { value: "grouped", label: "By client & service" },
+            { value: "list", label: "Table" },
+          ].map((layout) => {
+            const params = new URLSearchParams(query);
+            params.set("layout", layout.value);
+            return (
+              <Link
+                key={layout.value}
+                href={`/tasks?${params}`}
+                aria-current={
+                  filters.layout === layout.value ? "page" : undefined
+                }
+              >
+                {layout.label}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
       <section
         className="panel task-workspace"
         aria-labelledby="task-list-heading"
@@ -126,10 +151,17 @@ export default async function Tasks({
               {selectedView.title}{" "}
               <span className="count-pill">{tasks.count}</span>
             </h2>
-            <p>{selectedView.description}</p>
+            <p>
+              {filters.view === "history"
+                ? selectedView.description
+                : `${month.label} · ${selectedView.description}`}
+            </p>
           </div>
           {filtered && (
-            <Link className="text-link" href={`/tasks?view=${filters.view}`}>
+            <Link
+              className="text-link"
+              href={`/tasks?view=${filters.view}&layout=${filters.layout}`}
+            >
               Clear filters
             </Link>
           )}
@@ -146,6 +178,7 @@ export default async function Tasks({
             aria-label="Filter tasks"
           >
             <input type="hidden" name="view" value={filters.view} />
+            <input type="hidden" name="layout" value={filters.layout} />
             <label className="task-search">
               Search tasks
               <input
@@ -181,10 +214,16 @@ export default async function Tasks({
               title="Status"
               value={filters.status}
               empty="All statuses"
-              options={taskStatuses.map((value) => ({
-                value,
-                label: label(value),
-              }))}
+              options={taskStatuses
+                .filter(
+                  (value) =>
+                    !["mine", "overdue", "unassigned"].includes(filters.view) ||
+                    !["done", "cancelled"].includes(value),
+                )
+                .map((value) => ({
+                  value,
+                  label: label(value),
+                }))}
             />
             <SelectField
               name="priority"
@@ -236,23 +275,45 @@ export default async function Tasks({
             <button className="button secondary">Apply filters</button>
           </form>
         </details>
-        <TaskTable
-          statusUserId={canAdmin ? undefined : user.id}
-          editableStatus
-          tasks={tasks.rows}
-          members={directory.members}
-          assignmentOrganizationId={canAdmin ? organization.id : undefined}
-          emptyDescription={
-            filtered
-              ? "No tasks match these filters. Clear filters or try a different search."
-              : filters.view === "mine"
-                ? "You have no unfinished tasks assigned to you."
-                : filters.view === "overdue"
-                  ? "No overdue tasks. Your deadlines are on track."
-                  : "No tasks in this view yet."
-          }
-        />
-        <Pagination page={page} count={tasks.count} href={`/tasks?${query}`} />
+        {grouped ? (
+          <GroupedTaskList
+            tasks={tasks.rows}
+            members={directory.members}
+            assignmentOrganizationId={canAdmin ? organization.id : undefined}
+            editableStatus
+            statusUserId={canAdmin ? undefined : user.id}
+            expandAll={Boolean(filters.client || filters.project || filters.q)}
+            emptyDescription={
+              filtered
+                ? "No tasks match these filters. Clear filters or try a different search."
+                : "No tasks in this view yet."
+            }
+          />
+        ) : (
+          <TaskTable
+            statusUserId={canAdmin ? undefined : user.id}
+            editableStatus
+            tasks={tasks.rows}
+            members={directory.members}
+            assignmentOrganizationId={canAdmin ? organization.id : undefined}
+            emptyDescription={
+              filtered
+                ? "No tasks match these filters. Clear filters or try a different search."
+                : filters.view === "mine"
+                  ? "You have no unfinished tasks assigned to you."
+                  : filters.view === "overdue"
+                    ? "No overdue tasks. Your deadlines are on track."
+                    : "No tasks in this view yet."
+            }
+          />
+        )}
+        {!grouped && (
+          <Pagination
+            page={page}
+            count={tasks.count}
+            href={`/tasks?${query}`}
+          />
+        )}
       </section>
       {canAdmin && (
         <section className="section-gap" aria-label="Service work tools">

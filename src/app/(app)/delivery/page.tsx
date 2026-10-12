@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireWorkspace } from "@/lib/data/workspace";
 import { PageHeading, Badge } from "@/components/work/shared";
 import { DeliveryGenerator } from "@/components/work/delivery-generator";
+import { workspaceMonth } from "@/lib/data/task-filters";
 export default async function Delivery({
   searchParams,
 }: {
@@ -11,12 +12,7 @@ export default async function Delivery({
   const { db, organization, canAdmin } = await requireWorkspace();
   const filter = (await searchParams).client;
   const client = z.uuid().safeParse(filter).success ? filter : undefined;
-  const today = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Africa/Johannesburg",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
+  const month = workspaceMonth();
   let tasksQuery = db
     .from("tasks")
     .select(
@@ -25,8 +21,8 @@ export default async function Delivery({
     )
     .eq("organization_id", organization.id)
     .not("deliverable_definition_id", "is", null)
-    .gte("contract_end", today)
-    .lte("contract_start", today)
+    .gte("contract_end", month.start)
+    .lte("contract_start", month.end)
     .order("contract_end")
     .order("title")
     .limit(1000);
@@ -100,7 +96,7 @@ export default async function Delivery({
     <>
       <PageHeading
         title="Service delivery"
-        description="Quantity delivered against each current contractual target."
+        description={`${month.label} · Quantity delivered against this month’s service targets.`}
       />
       {canAdmin && <DeliveryGenerator organizationId={organization.id} />}
       <form className="delivery-filter">
@@ -122,10 +118,10 @@ export default async function Delivery({
         <button className="button secondary">Filter</button>
       </form>
       <p className="data-note">
-        Africa/Johannesburg calendar. Monthly work covers the current month;
-        weekly work covers the current Monday–Sunday. Targets use the supplied
-        quantities. Backlink ranges are met at the minimum of two; the full
-        range remains visible.
+        {month.label} · Monthly targets and generated weekly targets that
+        overlap this month. Calendar dates use South Africa time. Targets use
+        the supplied quantities. Backlink ranges are met at the minimum of two;
+        the full range remains visible.
       </p>
       {(["monthly", "weekly"] as const).map((cadence) => {
         const rows = contracts.filter(
@@ -140,7 +136,7 @@ export default async function Delivery({
               <h2>
                 {cadence === "monthly"
                   ? "Monthly deliverables"
-                  : "Actionable week"}
+                  : "Weekly deliverables"}
               </h2>
               <span>
                 {met} / {rows.length} targets met
