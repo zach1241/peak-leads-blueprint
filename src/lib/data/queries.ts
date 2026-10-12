@@ -91,14 +91,16 @@ export async function taskList({
   });
   // Filter a separate embed so every assignee is still shown in each result.
   const fields =
-    "*,projects(name),clients(name),service_deliverables(name,cadence),task_assignees(user_id),assigned:task_assignees(user_id)" as const;
+    deliverablesOnly
+      ? "*,projects!inner(name,status),clients(name),service_deliverables(name,cadence),task_assignees(user_id),assigned:task_assignees(user_id)" as const
+      : "*,projects(name,status),clients(name),service_deliverables(name,cadence),task_assignees(user_id),assigned:task_assignees(user_id)" as const;
   let query = db
     .from("tasks")
     .select(fields, { count: "exact" })
     .eq("organization_id", organization.id);
   // The Tasks workspace shows actionable service deliverables only.
   // Other task records remain available to other views and are never deleted.
-  if (deliverablesOnly) query = query.not("deliverable_definition_id", "is", null);
+  if (deliverablesOnly) query = query.not("deliverable_definition_id", "is", null).eq("projects.status", "active");
   const { today, monday, sunday } = workspaceCalendar();
   if (deliverablesOnly) query = query.or(currentMonthDeliverableScope());
   else if (filters.view !== "history") query = query.or(monthTaskScope());
