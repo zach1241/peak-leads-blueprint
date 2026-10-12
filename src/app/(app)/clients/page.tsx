@@ -36,13 +36,14 @@ export default async function Clients({
     .order("id")
     .range((page - 1) * 25, page * 25 - 1);
   if (error) throw new Error("Unable to load clients.");
-  const [summaries, linkedServices] = await Promise.all([
+  const [summaries, linkedServices, templatesResult] = await Promise.all([
     Promise.all(data.map((c) => clientWorkSummary(c.id))),
     db.from("projects").select("id,name,status,client_id,service_templates(name)")
       .eq("organization_id", organization.id).in("client_id", data.map((c) => c.id).length ? data.map((c) => c.id) : ["00000000-0000-0000-0000-000000000000"])
       .not("service_template_id", "is", null).order("name"),
+    db.from("service_templates").select("id,name").eq("organization_id",organization.id).order("name"),
   ]);
-  if (linkedServices.error) throw new Error("Unable to load client service settings.");
+  if (linkedServices.error || templatesResult.error) throw new Error("Unable to load client service settings.");
   return (
     <>
       <PageHeading
@@ -118,6 +119,7 @@ export default async function Clients({
                       <ClientServicesEditor
                         clientId={c.id}
                         canAdmin={canAdmin}
+                        templates={templatesResult.data ?? []}
                         services={(linkedServices.data ?? []).filter(service => service.client_id === c.id)
                           .map(service => ({ id: service.id, name: service.service_templates?.name || service.name, status: service.status }))}
                       />
