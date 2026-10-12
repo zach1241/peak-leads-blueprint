@@ -19,7 +19,7 @@ export type TaskFilters = {
   client: string;
   due: string;
   sort: string;
-  layout: "grouped" | "list";
+  layout: "list" | "board" | "calendar" | "gantt" | "grouped";
 };
 
 export function workspaceCalendar(now = new Date()) {
@@ -91,8 +91,8 @@ export function normalizeTaskFilters(
     client: uuid(raw.client),
     due: choice(raw.due, ["today", "week", "overdue", "undated"]),
     sort: choice(raw.sort, ["due", "newest", "oldest", "title"], "due"),
-    layout: choice(raw.layout, ["grouped", "list"], "grouped") as
-      "grouped" | "list",
+    layout: choice(raw.layout, ["list", "board", "calendar", "gantt", "grouped"], "list") as
+      "list" | "board" | "calendar" | "gantt" | "grouped",
   };
 }
 
@@ -102,7 +102,7 @@ export function taskFilterParams(filters: TaskFilters) {
     if (
       value &&
       !(key === "view" && value === "active") &&
-      !(key === "layout" && value === "grouped") &&
+      !(key === "layout" && value === "list") &&
       !(key === "sort" && value === "due")
     )
       query.set(key, value);

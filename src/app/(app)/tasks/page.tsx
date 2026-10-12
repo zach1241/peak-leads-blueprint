@@ -22,6 +22,7 @@ import {
 } from "@/components/work/shared";
 import { TaskTable } from "@/components/work/task-table";
 import { GroupedTaskList } from "@/components/work/grouped-task-list";
+import { TaskBoard, TaskCalendar, TaskGantt } from "@/components/work/task-visualizations";
 
 const views = [
   {
@@ -58,7 +59,8 @@ export default async function Tasks({
   // Legacy History links must not reopen prior-month work in this monthly queue.
   if (filters.view === "history") filters.view = "active";
   const month = workspaceMonth();
-  const grouped = filters.layout === "grouped";
+  const layout = typeof raw.layout === "string" && ["list","board","calendar","gantt","grouped"].includes(raw.layout) ? raw.layout : "list";
+  const grouped = layout !== "list";
   const page = pageNumber(typeof raw.page === "string" ? raw.page : undefined);
   const [directory, tasks, services, templates] = await Promise.all([
     directories(),
@@ -120,22 +122,15 @@ export default async function Tasks({
         </nav>
         <nav className="task-layouts" aria-label="Task layout">
           {[
-            { value: "grouped", label: "By client & service" },
-            { value: "list", label: "Table" },
-          ].map((layout) => {
+            { value: "list", label: "List" },
+            { value: "board", label: "Board" },
+            { value: "calendar", label: "Calendar" },
+            { value: "gantt", label: "Gantt" },
+          ].map(option => {
             const params = new URLSearchParams(query);
-            params.set("layout", layout.value);
-            return (
-              <Link
-                key={layout.value}
-                href={`/tasks?${params}`}
-                aria-current={
-                  filters.layout === layout.value ? "page" : undefined
-                }
-              >
-                {layout.label}
-              </Link>
-            );
+            params.set("layout", option.value);
+            params.delete("page");
+            return <Link key={option.value} href={`/tasks?${params}`} aria-current={layout === option.value ? "page" : undefined}>{option.label}</Link>;
           })}
         </nav>
       </div>
@@ -156,7 +151,7 @@ export default async function Tasks({
           {filtered && (
             <Link
               className="text-link"
-              href={`/tasks?view=${filters.view}&layout=${filters.layout}`}
+              href={`/tasks?view=${filters.view}&layout=${layout}`}
             >
               Clear filters
             </Link>
@@ -174,7 +169,7 @@ export default async function Tasks({
             aria-label="Filter tasks"
           >
             <input type="hidden" name="view" value={filters.view} />
-            <input type="hidden" name="layout" value={filters.layout} />
+            <input type="hidden" name="layout" value={layout} />
             <label className="task-search">
               Search deliverables
               <input
@@ -271,7 +266,13 @@ export default async function Tasks({
             <button className="button secondary">Apply filters</button>
           </form>
         </details>
-        {grouped ? (
+        {layout === "board" ? (
+          <TaskBoard tasks={tasks.rows} canEditStatus />
+        ) : layout === "calendar" ? (
+          <TaskCalendar tasks={tasks.rows} />
+        ) : layout === "gantt" ? (
+          <TaskGantt tasks={tasks.rows} />
+        ) : layout === "grouped" ? (
           <GroupedTaskList
             tasks={tasks.rows}
             members={directory.members}
@@ -303,7 +304,7 @@ export default async function Tasks({
             }
           />
         )}
-        {!grouped && (
+        {layout === "list" && (
           <Pagination
             page={page}
             count={tasks.count}
