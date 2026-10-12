@@ -59,6 +59,13 @@ export function workspaceMonth(now = new Date()) {
   };
 }
 
+// The deliverables workspace is a fresh monthly queue. An unfinished prior-month
+// item must not roll into the current month merely because its due date moved.
+// Weekly deliverables are assigned to the month in which their period starts.
+export function currentMonthDeliverableScope(month = workspaceMonth()) {
+  return `and(period_start.gte.${month.start},period_start.lte.${month.end}),and(period_start.is.null,period_end.is.null,due_date.gte.${month.start},due_date.lte.${month.end}),and(period_start.is.null,period_end.is.null,due_date.is.null,created_at.gte.${month.startedAt},created_at.lt.${month.endedAt})`;
+}
+
 // A work period takes precedence over its deadline or creation date. Weekly
 // periods crossing the month boundary belong to both months. New undated work
 // remains actionable; older undated work is available through History.
