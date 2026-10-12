@@ -247,10 +247,12 @@ export const clientWorkSummary = cache(async (clientId: string) => {
   const base = () =>
     db
       .from("tasks")
-      .select("id", { count: "exact", head: true })
+      .select("id,projects!inner(status)", { count: "exact", head: true })
       .eq("organization_id", organization.id)
       .eq("client_id", clientId)
-      .or(monthTaskScope());
+      .not("deliverable_definition_id", "is", null)
+      .eq("projects.status", "active")
+      .or(currentMonthDeliverableScope());
   const [total, done, overdue, review, services] = await Promise.all([
     base().neq("status", "cancelled"),
     base().eq("status", "done"),
