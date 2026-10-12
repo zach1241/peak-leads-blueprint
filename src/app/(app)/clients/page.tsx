@@ -1,3 +1,4 @@
+import { ClientServicesEditor } from "@/components/work/client-services-editor";
 import { clientWorkSummary } from "@/lib/data/queries";
 import Link from "next/link";
 import { requireWorkspace } from "@/lib/data/workspace";
@@ -35,7 +36,13 @@ export default async function Clients({
     .order("id")
     .range((page - 1) * 25, page * 25 - 1);
   if (error) throw new Error("Unable to load clients.");
-  const summaries = await Promise.all(data.map((c) => clientWorkSummary(c.id)));
+  const [summaries, linkedServices] = await Promise.all([
+    Promise.all(data.map((c) => clientWorkSummary(c.id))),
+    db.from("projects").select("id,name,status,client_id,service_templates(name)")
+      .eq("organization_id", organization.id).in("client_id", data.map((c) => c.id).length ? data.map((c) => c.id) : ["00000000-0000-0000-0000-000000000000"])
+      .not("service_template_id", "is", null).order("name"),
+  ]);
+  if (linkedServices.error) throw new Error("Unable to load client service settings.");
   return (
     <>
       <PageHeading
@@ -108,12 +115,12 @@ export default async function Clients({
                       <Badge value={c.status} />
                     </td>
                     <td>
-                      {summaries[index].services
-                        .map(
-                          (service) =>
-                            service.service_templates?.name || service.name,
-                        )
-                        .join(", ") || "No active services"}
+                      <ClientServicesEditor
+                        clientId={c.id}
+                        canAdmin={canAdmin}
+                        services={(linkedServices.data ?? []).filter(service => service.client_id === c.id)
+                          .map(service => ({ id: service.id, name: service.service_templates?.name || service.name, status: service.status }))}
+                      />
                     </td>
                     <td>
                       {summaries[index].done} / {summaries[index].total} done

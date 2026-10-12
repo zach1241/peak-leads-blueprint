@@ -6,6 +6,7 @@ import { requireWorkspace } from "./workspace";
 import { priorities, taskStatuses } from "./constants";
 import {
   monthTaskScope,
+  currentMonthDeliverableScope,
   normalizeTaskFilters,
   taskSearchPattern,
   workspaceCalendar,
@@ -55,6 +56,7 @@ export async function taskList({
   project,
   client,
   upcoming = false,
+  deliverablesOnly = false,
   limit = 25,
   view,
   q,
@@ -68,6 +70,7 @@ export async function taskList({
   project?: string;
   client?: string;
   upcoming?: boolean;
+  deliverablesOnly?: boolean;
   limit?: number;
   view?: string;
   q?: string;
@@ -88,13 +91,19 @@ export async function taskList({
   });
   // Filter a separate embed so every assignee is still shown in each result.
   const fields =
-    "*,projects(name),clients(name),service_deliverables(name,cadence),task_assignees(user_id),assigned:task_assignees(user_id)" as const;
+    deliverablesOnly
+      ? "*,projects!inner(name,status),clients(name),service_deliverables(name,cadence),task_assignees(user_id),assigned:task_assignees(user_id)" as const
+      : "*,projects(name,status),clients(name),service_deliverables(name,cadence),task_assignees(user_id),assigned:task_assignees(user_id)" as const;
   let query = db
     .from("tasks")
     .select(fields, { count: "exact" })
     .eq("organization_id", organization.id);
+  // The Tasks workspace shows actionable service deliverables only.
+  // Other task records remain available to other views and are never deleted.
+  if (deliverablesOnly) query = query.not("deliverable_definition_id", "is", null).eq("projects.status", "active");
   const { today, monday, sunday } = workspaceCalendar();
-  if (filters.view !== "history") query = query.or(monthTaskScope());
+  if (deliverablesOnly) query = query.or(currentMonthDeliverableScope());
+  else if (filters.view !== "history") query = query.or(monthTaskScope());
   const parsedStatus = z.enum(taskStatuses).safeParse(status);
   const parsedPriority = z.enum(priorities).safeParse(priority);
   if (parsedStatus.success) query = query.eq("status", parsedStatus.data);
@@ -238,10 +247,12 @@ export const clientWorkSummary = cache(async (clientId: string) => {
   const base = () =>
     db
       .from("tasks")
-      .select("id", { count: "exact", head: true })
+      .select("id,projects!inner(status)", { count: "exact", head: true })
       .eq("organization_id", organization.id)
       .eq("client_id", clientId)
-      .or(monthTaskScope());
+      .not("deliverable_definition_id", "is", null)
+      .eq("projects.status", "active")
+      .or(currentMonthDeliverableScope());
   const [total, done, overdue, review, services] = await Promise.all([
     base().neq("status", "cancelled"),
     base().eq("status", "done"),
