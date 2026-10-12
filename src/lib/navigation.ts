@@ -1,11 +1,12 @@
 export const navigation = [
   { href: "/dashboard", label: "Dashboard", icon: "overview", group: "Work" },
   { href: "/tasks", label: "Tasks", icon: "tasks", group: "Work" },
-  { href: "/clients", label: "Clients", icon: "clients", group: "Work" },
-  { href: "/projects", label: "Projects", icon: "projects", group: "Work" },
+  { href: "/clients", label: "Clients", icon: "clients", group: "Work", adminOnly: true },
+  { href: "/projects", label: "Projects", icon: "projects", group: "Work", adminOnly: true },
   {
     href: "/delivery",
     label: "Service delivery",
+    adminOnly: true,
     icon: "calendar",
     group: "Work",
   },
@@ -17,10 +18,11 @@ export const navigation = [
     group: "Resources",
   },
   { href: "/packages", label: "Services & Packages", icon: "projects", group: "Workspace", adminOnly: true },
-  { href: "/team", label: "Team", icon: "team", group: "Workspace" },
+  { href: "/team", label: "Team", icon: "team", group: "Workspace", adminOnly: true },
   {
     href: "/activity",
     label: "Activity",
+    adminOnly: true,
     icon: "activity",
     group: "Workspace",
   },
