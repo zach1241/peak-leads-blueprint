@@ -42,9 +42,7 @@ export default async function Task({
     .order("id")
     .range((page - 1) * 25, page * 25 - 1);
   if (error) throw new Error("Unable to load comments.");
-  const canUpdate =
-    context.canAdmin ||
-    task.task_assignees.some((a) => a.user_id === context.user.id);
+  const canUpdate = true;
   return (
     <>
       <Link href="/tasks" className="back-link">
@@ -150,7 +148,7 @@ export default async function Task({
             Record actual delivery here. Reaching the minimum marks this task
             done; reducing the quantity reopens it.
           </p>
-          {canUpdate && (
+          {context.canAdmin && (
             <ActionForm
               key={task.updated_at}
               action={saveQuantity}
