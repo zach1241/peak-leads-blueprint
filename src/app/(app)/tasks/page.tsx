@@ -28,28 +28,28 @@ const views = [
     value: "active",
     title: "This month",
     description:
-      "Tasks for this month, organized around your clients and services.",
+      "Actionable deliverables for this month, grouped by client and service.",
   },
   {
     value: "mine",
     title: "My tasks",
-    description: "Your unfinished tasks for this month.",
+    description: "Your unfinished assigned deliverables for this month.",
   },
   {
     value: "overdue",
     title: "Overdue",
-    description: "This month’s unfinished tasks with a deadline before today.",
+    description: "This month’s unfinished deliverables past their due date.",
   },
   {
     value: "unassigned",
     title: "Unassigned",
-    description: "This month’s work that needs an owner.",
+    description: "This month’s deliverables that need an owner.",
   },
   {
     value: "history",
     title: "History",
     description:
-      "All work periods, including completed, cancelled and future tasks.",
+      "Deliverables across all work periods, including completed and future items.",
   },
 ];
 
@@ -66,7 +66,9 @@ export default async function Tasks({
   const page = pageNumber(typeof raw.page === "string" ? raw.page : undefined);
   const [directory, tasks, services, templates] = await Promise.all([
     directories(),
-    grouped ? taskListAll(filters) : taskList({ ...filters, page }),
+    grouped
+      ? taskListAll({ ...filters, deliverablesOnly: true })
+      : taskList({ ...filters, page, deliverablesOnly: true }),
     canAdmin ? serviceAssignmentOptions() : Promise.resolve([]),
     canAdmin ? serviceTemplates() : Promise.resolve([]),
   ]);
@@ -92,9 +94,9 @@ export default async function Tasks({
   return (
     <>
       <PageHeading
-        title="Tasks"
-        description={`${month.label} · Choose a client, then focus on their services and owners.`}
-        href={canAdmin ? "/tasks/new" : undefined}
+        title="Deliverable tasks"
+        description={`${month.label} · Track actionable service deliverables, owners and progress.`}
+        href={undefined}
         action="Create task"
       />
       <div className="task-view-controls">
@@ -180,7 +182,7 @@ export default async function Tasks({
             <input type="hidden" name="view" value={filters.view} />
             <input type="hidden" name="layout" value={filters.layout} />
             <label className="task-search">
-              Search tasks
+              Search deliverables
               <input
                 type="search"
                 name="q"
@@ -285,8 +287,8 @@ export default async function Tasks({
             expandAll={Boolean(filters.client || filters.project || filters.q)}
             emptyDescription={
               filtered
-                ? "No tasks match these filters. Clear filters or try a different search."
-                : "No tasks in this view yet."
+                ? "No deliverables match these filters. Clear filters or try a different search."
+                : "No deliverables in this view yet."
             }
           />
         ) : (
@@ -298,12 +300,12 @@ export default async function Tasks({
             assignmentOrganizationId={canAdmin ? organization.id : undefined}
             emptyDescription={
               filtered
-                ? "No tasks match these filters. Clear filters or try a different search."
+                ? "No deliverables match these filters. Clear filters or try a different search."
                 : filters.view === "mine"
-                  ? "You have no unfinished tasks assigned to you."
+                  ? "You have no unfinished deliverables assigned to you."
                   : filters.view === "overdue"
                     ? "No overdue tasks. Your deadlines are on track."
-                    : "No tasks in this view yet."
+                    : "No deliverables in this view yet."
             }
           />
         )}
