@@ -16,6 +16,7 @@ export function TaskTable({
   editableStatus = false,
   statusUserId,
   emptyDescription = "Create your first task or adjust your filters.",
+  hideContext = false,
 }: {
   tasks: Awaited<ReturnType<typeof taskList>>["rows"];
   members: Directory["members"];
@@ -23,6 +24,7 @@ export function TaskTable({
   editableStatus?: boolean;
   statusUserId?: string;
   emptyDescription?: string;
+  hideContext?: boolean;
 }) {
   if (!tasks.length) {
     return (
@@ -56,7 +58,7 @@ export function TaskTable({
             <th>Status</th>
             <th>Priority</th>
             <th>Assignees</th>
-            <th>Client / service</th>
+            {!hideContext && <th>Client / service</th>}
             <th>Due date</th>
           </tr>
         </thead>
@@ -138,27 +140,29 @@ export function TaskTable({
                   )}
                 </td>
 
-                <td data-label="Client / service">
-                  {task.client_id ? (
-                    <Link
-                      className="record-link"
-                      href={`/clients/${task.client_id}`}
-                    >
-                      {task.clients?.name ?? "Client"}
-                    </Link>
-                  ) : (
-                    "No client"
-                  )}
-                  <small>
-                    {task.project_id ? (
-                      <Link href={`/projects/${task.project_id}`}>
-                        {task.projects?.name ?? "Project"}
+                {!hideContext && (
+                  <td data-label="Client / service">
+                    {task.client_id ? (
+                      <Link
+                        className="record-link"
+                        href={`/clients/${task.client_id}`}
+                      >
+                        {task.clients?.name ?? "Client"}
                       </Link>
                     ) : (
-                      "No service / project"
+                      "No client"
                     )}
-                  </small>
-                </td>
+                    <small>
+                      {task.project_id ? (
+                        <Link href={`/projects/${task.project_id}`}>
+                          {task.projects?.name ?? "Project"}
+                        </Link>
+                      ) : (
+                        "No service / project"
+                      )}
+                    </small>
+                  </td>
+                )}
 
                 <td data-label="Due date" className="nowrap">
                   <span className={overdue ? "overdue-date" : undefined}>

@@ -1883,7 +1883,7 @@ body:has(.mobile-dialog[open]) {
   .task-table td:first-child::before {
     display: none;
   }
-  .task-table td:nth-child(5) {
+  .task-table td[data-label="Client / service"] {
     grid-column: 1 / -1;
   }
   .task-facts {
@@ -1919,5 +1919,49 @@ body:has(.mobile-dialog[open]) {
 @media (prefers-reduced-motion: reduce) {
   .metric-link {
     transition: none;
+  }
+}
+.task-view-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.task-view-controls .task-views {
+  margin-bottom: 0;
+}
+.task-layouts {
+  display: flex;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  gap: 4px;
+}
+.task-layouts a {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 11px;
+  border-radius: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.task-layouts a[aria-current] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.task-layouts a:hover {
+  color: var(--foreground);
+}
+@media (max-width: 600px) {
+  .task-layouts {
+    width: 100%;
+  }
+  .task-layouts a {
+    flex: 1;
+    justify-content: center;
   }
 }

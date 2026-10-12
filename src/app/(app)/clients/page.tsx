@@ -117,7 +117,7 @@ export default async function Clients({
                     </td>
                     <td>
                       {summaries[index].done} / {summaries[index].total} done
-                      <small>Current work · Cancelled excluded</small>
+                      <small>This month · Cancelled excluded</small>
                     </td>
                     <td>
                       <Link
