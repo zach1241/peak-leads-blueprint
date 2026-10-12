@@ -150,9 +150,7 @@ export default async function Tasks({
               <span className="count-pill">{tasks.count}</span>
             </h2>
             <p>
-              {filters.view === "history"
-                ? selectedView.description
-                : `${month.label} · ${selectedView.description}`}
+              {`${month.label} · ${selectedView.description}`}
             </p>
           </div>
           {filtered && (
