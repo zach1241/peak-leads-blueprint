@@ -6,9 +6,11 @@ import { requireWorkspace } from "./workspace";
 import { priorities, taskStatuses } from "./constants";
 import {
   monthTaskScope,
-  currentMonthDeliverableScope,
+  activeDeliverableTaskScope,
+  combineTaskScopes,
   normalizeTaskFilters,
   taskSearchPattern,
+  taskSearchScope,
   workspaceCalendar,
   workspaceMonth,
 } from "./task-filters";
@@ -48,6 +50,23 @@ export const directories = cache(async () => {
   };
 });
 export type Directory = Awaited<ReturnType<typeof directories>>;
+
+const matchingDefinitionIds = cache(async (search: string) => {
+  const { db, organization } = await requireWorkspace();
+  const ids: string[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const result = await db.from("service_deliverables")
+      .select("id")
+      .eq("organization_id", organization.id)
+      .ilike("name", taskSearchPattern(search))
+      .order("id")
+      .range(offset, offset + 999);
+    if (result.error) throw new Error("Unable to search deliverable names.");
+    ids.push(...result.data.map((definition) => definition.id));
+    if (result.data.length < 1000) break;
+  }
+  return ids;
+});
 export async function taskList({
   page = 1,
   status,
@@ -100,10 +119,16 @@ export async function taskList({
     .eq("organization_id", organization.id);
   // The Tasks workspace shows actionable service deliverables only.
   // Other task records remain available to other views and are never deleted.
-  if (deliverablesOnly) query = query.not("deliverable_definition_id", "is", null).eq("projects.status", "active");
+  if (deliverablesOnly) query = query.eq("projects.status", "active");
   const { today, monday, sunday } = workspaceCalendar();
-  if (deliverablesOnly) query = query.or(currentMonthDeliverableScope());
-  else if (filters.view !== "history") query = query.or(monthTaskScope());
+  const monthScope = deliverablesOnly
+    ? activeDeliverableTaskScope()
+    : filters.view !== "history" ? monthTaskScope() : "";
+  const searchScope = filters.q
+    ? taskSearchScope(filters.q, await matchingDefinitionIds(filters.q))
+    : "";
+  const scope = combineTaskScopes(monthScope, searchScope);
+  if (scope) query = query.or(scope);
   const parsedStatus = z.enum(taskStatuses).safeParse(status);
   const parsedPriority = z.enum(priorities).safeParse(priority);
   if (parsedStatus.success) query = query.eq("status", parsedStatus.data);
@@ -116,7 +141,6 @@ export async function taskList({
       .not("assigned", "is", null);
   if (filters.project) query = query.eq("project_id", filters.project);
   if (filters.client) query = query.eq("client_id", filters.client);
-  if (filters.q) query = query.ilike("title", taskSearchPattern(filters.q));
   if (["mine", "overdue", "unassigned"].includes(filters.view))
     query = query.not("status", "in", "(done,cancelled)");
   if (filters.view === "overdue" || filters.due === "overdue")
@@ -199,12 +223,13 @@ export async function dashboardCounts() {
   const myTasks = () =>
     db
       .from("tasks")
-      .select("id,task_assignees!inner(user_id)", {
+      .select("id,projects!inner(status),task_assignees!inner(user_id)", {
         count: "exact",
         head: true,
       })
       .eq("organization_id", organization.id)
-      .or(monthTaskScope())
+      .eq("projects.status", "active")
+      .or(activeDeliverableTaskScope())
       .eq("task_assignees.user_id", user.id)
       .not("status", "in", "(done,cancelled)");
   const results = await Promise.all([
@@ -230,9 +255,10 @@ export async function taskStatusCounts() {
     statuses.map(async (status) => {
       const { count, error } = await db
         .from("tasks")
-        .select("id", { count: "exact", head: true })
+        .select("id,projects!inner(status)", { count: "exact", head: true })
         .eq("organization_id", organization.id)
-        .or(monthTaskScope())
+        .eq("projects.status", "active")
+        .or(activeDeliverableTaskScope())
         .eq("status", status);
       if (error) throw new Error("Unable to load task status overview.");
       return { status, count: count ?? 0 };
@@ -250,9 +276,8 @@ export const clientWorkSummary = cache(async (clientId: string) => {
       .select("id,projects!inner(status)", { count: "exact", head: true })
       .eq("organization_id", organization.id)
       .eq("client_id", clientId)
-      .not("deliverable_definition_id", "is", null)
       .eq("projects.status", "active")
-      .or(currentMonthDeliverableScope());
+      .or(activeDeliverableTaskScope());
   const [total, done, overdue, review, services] = await Promise.all([
     base().neq("status", "cancelled"),
     base().eq("status", "done"),

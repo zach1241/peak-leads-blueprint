@@ -7,7 +7,6 @@ import { taskStatuses } from "@/lib/data/constants";
 import {
   requireWorkspace,
   workspaceOptions,
-  canUpdateTask,
 } from "@/lib/data/workspace";
 import {
   taskSchema,
@@ -16,7 +15,10 @@ import {
   commentSchema,
 } from "@/lib/data/validation";
 export type WorkState = { error?: string; success?: string };
-function errorMessage(error: { code?: string }) {
+function errorMessage(error: { code?: string; hint?: string | null; message?: string }) {
+  if (error.hint === "one_active_seo_package" ||
+      (error.code === "23505" && error.message?.includes('"one_active_seo_package"')))
+    return "Pause the other SEO package first. Only one SEO package can be active for a client.";
   if (error.code === "23514")
     return "For recurring deliverables, record the delivered quantity before marking done. Check other field limits too.";
   if (error.code === "22023")

@@ -461,6 +461,7 @@ export type Database = {
           created_by: string | null
           description: string | null
           due_date: string | null
+          exclusive_service_group: string | null
           id: string
           name: string
           organization_id: string
@@ -475,6 +476,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           due_date?: string | null
+          exclusive_service_group?: string | null
           id?: string
           name: string
           organization_id: string
@@ -489,6 +491,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           due_date?: string | null
+          exclusive_service_group?: string | null
           id?: string
           name?: string
           organization_id?: string

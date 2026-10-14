@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "test:workspace": "node scripts/test-workspace-filters.mjs",
+    "test:views": "node scripts/test-task-views.mjs",
+    "test:operational": "node scripts/test-operational-queries.mjs",
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",

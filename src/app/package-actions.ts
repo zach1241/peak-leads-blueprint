@@ -43,7 +43,9 @@ export async function saveDeliverable(_:WorkState,form:FormData):Promise<WorkSta
  const row={name:v.name,cadence:v.cadence,target_min:v.target_min,target_max:v.target_max,unit:v.unit,instructions:v.instructions};
  if(v.id){
   const r=await db.from("service_deliverables").update(row).eq("organization_id",organization.id).eq("service_template_id",v.service_template_id).eq("id",v.id).select("id").single();
-  if(r.error)return {error:"Unable to update deliverable."};
+  if(r.error)return {error:r.error.hint === "deliverable_cadence_history"
+    ? "This deliverable has task history. Add a new deliverable for a different cadence."
+    : "Unable to update deliverable."};
  }else{
   const r=await db.from("service_deliverables").insert({...row,organization_id:organization.id,service_template_id:v.service_template_id,code:slug(v.name)+"-"+crypto.randomUUID().slice(0,6),active:true}).select("id").single();
   if(r.error)return {error:"Unable to create deliverable."};

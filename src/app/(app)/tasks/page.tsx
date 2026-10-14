@@ -23,6 +23,8 @@ import {
 import { TaskTable } from "@/components/work/task-table";
 import { GroupedTaskList } from "@/components/work/grouped-task-list";
 import { TaskBoard, TaskCalendar, TaskGantt } from "@/components/work/task-visualizations";
+import { TaskContextFilters } from "@/components/work/task-context-filters";
+import { validateTaskContextFilters } from "@/lib/data/task-view-models";
 
 const views = [
   {
@@ -53,17 +55,17 @@ export default async function Tasks({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { organization, canAdmin, user } = await requireWorkspace();
+  const { organization, canAdmin } = await requireWorkspace();
   const raw = await searchParams;
-  const filters = normalizeTaskFilters(raw);
+  const directory = await directories();
+  const filters = validateTaskContextFilters(normalizeTaskFilters(raw), directory);
   // Legacy History links must not reopen prior-month work in this monthly queue.
   if (filters.view === "history") filters.view = "active";
   const month = workspaceMonth();
-  const layout = typeof raw.layout === "string" && ["list","board","calendar","gantt","grouped"].includes(raw.layout) ? raw.layout : "list";
+  const layout = filters.layout;
   const grouped = layout !== "list";
   const page = pageNumber(typeof raw.page === "string" ? raw.page : undefined);
-  const [directory, tasks, services, templates] = await Promise.all([
-    directories(),
+  const [tasks, services, templates] = await Promise.all([
     grouped
       ? taskListAll({ ...filters, deliverablesOnly: true })
       : taskList({ ...filters, page, deliverablesOnly: true }),
@@ -77,9 +79,6 @@ export default async function Tasks({
     redirect(`/tasks?${query}`);
   }
   const selectedView = views.find((view) => view.value === filters.view)!;
-  const clients = new Map(
-    directory.clients.map((client) => [client.id, client.name]),
-  );
   const filtered = Boolean(
     filters.q ||
     filters.status ||
@@ -180,25 +179,12 @@ export default async function Tasks({
                 maxLength={120}
               />
             </label>
-            <SelectField
-              name="client"
-              title="Client"
-              value={filters.client}
-              empty="All clients"
-              options={directory.clients.map((c) => ({
-                value: c.id,
-                label: c.name,
-              }))}
-            />
-            <SelectField
-              name="project"
-              title="Service / project"
-              value={filters.project}
-              empty="All services"
-              options={directory.projects.filter((p) => p.status === "active" && p.service_template_id && (!filters.client || p.client_id === filters.client)).map((p) => ({
-                value: p.id,
-                label: `${p.name}${p.client_id ? ` · ${clients.get(p.client_id) || "Client"}` : ""}`,
-              }))}
+            <TaskContextFilters
+              key={`${filters.client}:${filters.project}`}
+              clients={directory.clients}
+              projects={directory.projects}
+              client={filters.client}
+              project={filters.project}
             />
             <SelectField
               name="status"
@@ -269,9 +255,9 @@ export default async function Tasks({
         {layout === "board" ? (
           <TaskBoard tasks={tasks.rows} canEditStatus />
         ) : layout === "calendar" ? (
-          <TaskCalendar tasks={tasks.rows} />
+          <TaskCalendar tasks={tasks.rows} month={month} />
         ) : layout === "gantt" ? (
-          <TaskGantt tasks={tasks.rows} />
+          <TaskGantt tasks={tasks.rows} month={month} />
         ) : layout === "grouped" ? (
           <GroupedTaskList
             tasks={tasks.rows}
@@ -288,7 +274,6 @@ export default async function Tasks({
           />
         ) : (
           <TaskTable
-            statusUserId={canAdmin ? undefined : user.id}
             editableStatus
             tasks={tasks.rows}
             members={directory.members}

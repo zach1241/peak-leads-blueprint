@@ -66,6 +66,12 @@ export function currentMonthDeliverableScope(month = workspaceMonth()) {
   return `and(period_start.gte.${month.start},period_start.lte.${month.end}),and(period_start.is.null,period_end.is.null,due_date.gte.${month.start},due_date.lte.${month.end}),and(period_start.is.null,period_end.is.null,due_date.is.null,created_at.gte.${month.startedAt},created_at.lt.${month.endedAt})`;
 }
 
+// Operational views share the same deliverable and month rules. Callers also
+// embed projects with !inner and require projects.status = active.
+export function activeDeliverableTaskScope(month = workspaceMonth()) {
+  return `and(deliverable_definition_id.not.is.null,or(${currentMonthDeliverableScope(month)}))`;
+}
+
 // A work period takes precedence over its deadline or creation date. Weekly
 // periods crossing the month boundary belong to both months. New undated work
 // remains actionable; older undated work is available through History.
@@ -113,4 +119,25 @@ export function taskFilterParams(filters: TaskFilters) {
 // ilike uses SQL pattern syntax. Treat searches as literal text.
 export function taskSearchPattern(value: string) {
   return `%${value.replace(/[\\%_]/g, "\\$&")}%`;
+}
+
+// PostgREST OR values need quoting as well as SQL wildcard escaping. Matching
+// definition IDs allow one task query to search the name shown in every layout
+// while retaining complete assignee embeds and exact pagination counts.
+export function taskSearchScope(value: string, definitionIds: string[] = []) {
+  if (!value) return "";
+  const ids = [...new Set(definitionIds.filter((id) => z.uuid().safeParse(id).success))];
+  const title = `title.ilike.${JSON.stringify(taskSearchPattern(value))}`;
+  return ids.length
+    ? `${title},deliverable_definition_id.in.(${ids.join(",")})`
+    : title;
+}
+
+// A single OR parameter contains the intersection of independently required
+// scopes, so adding search cannot replace or loosen the monthly queue.
+export function combineTaskScopes(...scopes: string[]) {
+  const required = scopes.filter(Boolean);
+  return required.length > 1
+    ? `and(${required.map((scope) => `or(${scope})`).join(",")})`
+    : required[0] ?? "";
 }

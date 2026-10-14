@@ -1,7 +1,7 @@
 import "server-only";
 import { requireWorkspace } from "./workspace";
 import type { Json, Database } from "@/lib/database.types";
-import { monthTaskScope, workspaceMonth } from "./task-filters";
+import { activeDeliverableTaskScope, workspaceMonth } from "./task-filters";
 const dateInWorkspace = (date: string | Date) =>
   new Intl.DateTimeFormat("en-CA", {
     timeZone: "Africa/Johannesburg",
@@ -31,10 +31,11 @@ export async function currentMonthBurndown() {
   for (let offset = 0; ; offset += 1000) {
     const result = await db
       .from("tasks")
-      .select("id,status,created_at")
+      .select("id,status,created_at,projects!inner(status)")
       .eq("organization_id", organization.id)
       .neq("status", "cancelled")
-      .or(monthTaskScope(monthScope))
+      .eq("projects.status", "active")
+      .or(activeDeliverableTaskScope(monthScope))
       .order("id")
       .range(offset, offset + 999);
     if (result.error) throw new Error("Unable to load monthly task scope.");

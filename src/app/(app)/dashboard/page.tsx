@@ -21,7 +21,7 @@ export default async function Dashboard() {
   const month = workspaceMonth();
   const [counts, upcoming, events, directory, statuses] = await Promise.all([
     dashboardCounts(),
-    taskList({ assignee: user.id, upcoming: true, limit: 8 }),
+    taskList({ assignee: user.id, upcoming: true, limit: 8, deliverablesOnly: true }),
     activity(1, 5, true),
     directories(),
     taskStatusCounts(),

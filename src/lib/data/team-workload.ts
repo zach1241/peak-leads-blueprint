@@ -2,7 +2,7 @@ import "server-only";
 import { requireWorkspace } from "./workspace";
 import { directories } from "./queries";
 import {
-  monthTaskScope,
+  activeDeliverableTaskScope,
   workspaceCalendar,
   workspaceMonth,
 } from "./task-filters";
@@ -22,10 +22,11 @@ export async function teamWorkload() {
     const result = await db
       .from("tasks")
       .select(
-        "id,status,due_date,period_start,period_end,task_assignees(user_id)",
+        "id,status,due_date,period_start,period_end,projects!inner(status),task_assignees(user_id)",
       )
       .eq("organization_id", organization.id)
-      .or(monthTaskScope(month))
+      .eq("projects.status", "active")
+      .or(activeDeliverableTaskScope(month))
       .order("id")
       .range(offset, offset + 999);
     if (result.error) throw new Error("Unable to load monthly team work.");
