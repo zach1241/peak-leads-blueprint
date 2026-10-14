@@ -33,6 +33,9 @@ const {
   taskSearchPattern,
   workspaceMonth,
   monthTaskScope,
+  activeDeliverableTaskScope,
+  taskSearchScope,
+  combineTaskScopes,
 } = load("src/lib/data/task-filters.ts");
 const { safeDestination } = load("src/lib/navigation.ts");
 let checks = 0;
@@ -84,7 +87,7 @@ check("Invalid URL values produce usable default filters", () =>
       client: "",
       due: "",
       sort: "due",
-      layout: "grouped",
+      layout: "list",
     },
   ),
 );
@@ -169,13 +172,13 @@ check("Month boundaries roll over the year", () =>
     "2026-12-31T22:00:00.000Z",
   ),
 );
-check("Grouped client/service view is the default", () =>
-  assert.equal(normalizeTaskFilters({}).layout, "grouped"),
+check("List view is the default", () =>
+  assert.equal(normalizeTaskFilters({}).layout, "list"),
 );
-check("Malformed layouts fall back to grouped work", () =>
+check("Malformed layouts fall back to List", () =>
   assert.equal(
     normalizeTaskFilters({ layout: ["list", "grouped"] }).layout,
-    "grouped",
+    "list",
   ),
 );
 
@@ -183,9 +186,15 @@ check("Malformed layouts fall back to grouped work", () =>
 // scope cannot silently reintroduce past work or drop newly created undated work.
 function splitConditions(value) {
   let depth = 0,
-    start = 0;
+    start = 0,
+    quoted = false,
+    escaped = false;
   const conditions = [];
   for (let i = 0; i < value.length; i++) {
+    if (escaped) { escaped = false; continue; }
+    if (quoted && value[i] === "\\") { escaped = true; continue; }
+    if (value[i] === '"') { quoted = !quoted; continue; }
+    if (quoted) continue;
     if (value[i] === "(") depth++;
     if (value[i] === ")") depth--;
     if (value[i] === "," && depth === 0) {
@@ -201,11 +210,27 @@ function matchesFilter(task, filter) {
     return splitConditions(filter.slice(4, -1)).every((part) =>
       matchesFilter(task, part),
     );
+  if (filter.startsWith("or("))
+    return splitConditions(filter.slice(3, -1)).some((part) => matchesFilter(task, part));
   const [, field, operator, value] =
-    filter.match(/^([a-z_]+)\.(is|gte|lte|lt)\.(.+)$/) ?? [];
+    filter.match(/^([a-z_]+)\.(not\.is|is|gte|lte|lt|in|ilike)\.(.+)$/) ?? [];
   if (!field) throw new Error(`Unsupported test filter ${filter}`);
   const actual = task[field];
   if (operator === "is") return value === "null" && actual === null;
+  if (operator === "not.is") return value === "null" && actual != null;
+  if (operator === "in") return value.slice(1,-1).split(",").includes(actual);
+  if (operator === "ilike") {
+    const pattern = value.startsWith('"') ? JSON.parse(value) : value;
+    let regex = "";
+    for (let i=0;i<pattern.length;i++) {
+      const character=pattern[i];
+      if (character === "\\") regex += pattern[++i].replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+      else if (character === "%") regex += ".*";
+      else if (character === "_") regex += ".";
+      else regex += character.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+    }
+    return typeof actual === "string" && new RegExp(`^${regex}$`,"i").test(actual);
+  }
   if (actual === null || actual === undefined) return false;
   return operator === "gte"
     ? actual >= value
@@ -337,4 +362,38 @@ for (const [name, task, expected] of taskFixtures)
       expected,
     ),
   );
+
+const october = workspaceMonth(new Date("2026-10-12T10:00:00Z"));
+const definitionId = "a596eb93-f2dc-4d7e-8233-c916a7a1d10a";
+const operationalScope = activeDeliverableTaskScope(october);
+for (const [name, task, expected] of taskFixtures) {
+  const operationalExpected = name === "week crossing into October appears" ? false : expected;
+  check(`Operational deliverables: ${name}`, () => assert.equal(
+    matchesFilter({...task, deliverable_definition_id: definitionId}, operationalScope), operationalExpected,
+  ));
+}
+check("A current-month manual task stays outside deliverable totals", () => assert.equal(
+  matchesFilter({period_start:"2026-10-01",period_end:"2026-10-31",deliverable_definition_id:null}, operationalScope), false,
+));
+check("Renamed displayed deliverables match while the month remains required", () => {
+  const filter=combineTaskScopes(operationalScope, taskSearchScope("New title", [definitionId]));
+  const task={title:"Original title",deliverable_definition_id:definitionId,period_start:"2026-10-01",period_end:"2026-10-31"};
+  assert.equal(matchesFilter(task,filter),true);
+  assert.equal(matchesFilter({...task,period_start:"2026-09-01",period_end:"2026-09-30"},filter),false);
+  assert.equal(matchesFilter({...task,deliverable_definition_id:"00000000-0000-0000-0000-000000000000"},filter),false);
+});
+check("Original task titles are still searchable without a matching definition", () => assert.equal(
+  matchesFilter({title:"Original SEO report"},taskSearchScope("SEO report")),true,
+));
+check("Search punctuation cannot introduce another PostgREST condition", () => {
+  const search='report,or(status.eq.done) "50%_\\"';
+  const filter=taskSearchScope(search);
+  assert.equal(splitConditions(filter).length,1);
+  assert.equal(matchesFilter({title:`Quarterly ${search}`},filter),true);
+  assert.equal(matchesFilter({title:"Unrelated report",status:"done"},filter),false);
+});
+check("Definition identifiers cannot inject an OR clause", () => {
+  assert.equal(taskSearchScope("report",["invalid),status.eq.done",definitionId,definitionId]),
+    `title.ilike."%report%",deliverable_definition_id.in.(${definitionId})`);
+});
 console.log(`${checks} total workspace checks passed.`);

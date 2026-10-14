@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireWorkspace } from "@/lib/data/workspace";
 import { PageHeading, Badge } from "@/components/work/shared";
 import { DeliveryGenerator } from "@/components/work/delivery-generator";
-import { workspaceMonth } from "@/lib/data/task-filters";
+import { activeDeliverableTaskScope, workspaceMonth } from "@/lib/data/task-filters";
 export default async function Delivery({
   searchParams,
 }: {
@@ -16,13 +16,12 @@ export default async function Delivery({
   let tasksQuery = db
     .from("tasks")
     .select(
-      "*,clients(name),projects(name),service_deliverables(cadence,name)",
+      "*,clients(name),projects!inner(name,status),service_deliverables(cadence,name)",
       { count: "exact" },
     )
     .eq("organization_id", organization.id)
-    .not("deliverable_definition_id", "is", null)
-    .gte("contract_end", month.start)
-    .lte("contract_start", month.end)
+    .eq("projects.status", "active")
+    .or(activeDeliverableTaskScope(month))
     .order("contract_end")
     .order("title")
     .limit(1000);
@@ -118,8 +117,8 @@ export default async function Delivery({
         <button className="button secondary">Filter</button>
       </form>
       <p className="data-note">
-        {month.label} · Monthly targets and generated weekly targets that
-        overlap this month. Calendar dates use South Africa time. Targets use
+        {month.label} · Active service targets whose work period starts this
+        month. Calendar dates use South Africa time. Targets use
         the supplied quantities. Backlink ranges are met at the minimum of two;
         the full range remains visible.
       </p>

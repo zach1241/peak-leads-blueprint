@@ -13,16 +13,22 @@ async function serviceContext(clientId: string) {
   return workspace;
 }
 
-async function seoConflict(db: Awaited<ReturnType<typeof requireWorkspace>>["db"], organizationId: string, clientId: string, name: string, exclude?: string) {
-  if (!["Standard SEO","Dominate SEO"].includes(name)) return false;
-  const other = name === "Standard SEO" ? "Dominate SEO" : "Standard SEO";
+async function seoConflict(db: Awaited<ReturnType<typeof requireWorkspace>>["db"], organizationId: string, clientId: string, code: string, exclude?: string) {
+  if (!["standard-seo","dominate-seo"].includes(code)) return false;
+  const other = code === "standard-seo" ? "dominate-seo" : "standard-seo";
   const { data, error } = await db.from("projects")
-    .select("id,service_templates!inner(name)")
+    .select("id,service_templates!inner(code)")
     .eq("organization_id",organizationId).eq("client_id",clientId)
-    .eq("status","active").eq("service_templates.name",other);
+    .eq("status","active").eq("service_templates.code",other);
   if (error) throw new Error("Unable to verify the client's SEO packages.");
   return (data ?? []).some(project => project.id !== exclude);
 }
+
+const isSeoConflict = (error: { code?: string; message?: string }) => error.code === "23505"
+  && error.message?.includes('"one_active_seo_package"');
+const serviceError = (error: { code?: string; message?: string }) => isSeoConflict(error)
+  ? "Pause the other SEO package first. Only one SEO package can be active."
+  : "Unable to update this service.";
 
 export async function changeClientServiceStatus(_: WorkState, form: FormData): Promise<WorkState> {
   const parsed = z.object({
@@ -33,14 +39,14 @@ export async function changeClientServiceStatus(_: WorkState, form: FormData): P
     const {client_id,project_id,status}=parsed.data;
     const {db,organization}=await serviceContext(client_id);
     const {data:project,error}=await db.from("projects")
-      .select("id,service_templates(name)")
+      .select("id,service_templates(code)")
       .eq("organization_id",organization.id).eq("client_id",client_id).eq("id",project_id).maybeSingle();
     if(error || !project) return {error:"Service not found. Refresh and try again."};
-    if(status==="active" && await seoConflict(db,organization.id,client_id,project.service_templates?.name ?? "",project_id))
+    if(status==="active" && await seoConflict(db,organization.id,client_id,project.service_templates?.code ?? "",project_id))
       return {error:"Pause the other SEO package first. Only one SEO package can be active."};
     const result=await db.from("projects").update({status})
       .eq("organization_id",organization.id).eq("client_id",client_id).eq("id",project_id).select("id").single();
-    if(result.error) return {error:"Unable to update this service."};
+    if(result.error) return {error:serviceError(result.error)};
     if(status==="active") {
       const generated=await db.rpc("generate_service_deliverables",{p_organization_id:organization.id,p_project_id:project_id});
       if(generated.error) return {error:"Service activated, but tasks could not be generated. Use Refresh recurring work."};
@@ -55,10 +61,10 @@ export async function addClientService(_: WorkState,form:FormData):Promise<WorkS
   if(!parsed.success)return {error:"Select a service to add."};
   try{
     const {db,organization}=await serviceContext(parsed.data.client_id);
-    const {data:template,error}=await db.from("service_templates").select("id,name")
+    const {data:template,error}=await db.from("service_templates").select("id,code")
       .eq("organization_id",organization.id).eq("id",parsed.data.service_template_id).single();
     if(error||!template)return {error:"Service template unavailable."};
-    if(await seoConflict(db,organization.id,parsed.data.client_id,template.name))
+    if(await seoConflict(db,organization.id,parsed.data.client_id,template.code))
       return {error:"Pause the other SEO package before adding this one."};
     const {data:existing,error:existingError}=await db.from("projects").select("id,status")
       .eq("organization_id",organization.id).eq("client_id",parsed.data.client_id)
@@ -68,7 +74,7 @@ export async function addClientService(_: WorkState,form:FormData):Promise<WorkS
       if(existing.status==="active")return {error:"This service is already active."};
       const activated=await db.from("projects").update({status:"active"}).eq("id",existing.id)
         .eq("organization_id",organization.id);
-      if(activated.error)return {error:"Unable to reactivate this service."};
+      if(activated.error)return {error:serviceError(activated.error)};
       const generated=await db.rpc("generate_service_deliverables",{p_organization_id:organization.id,p_project_id:existing.id});
       revalidatePath("/","layout");
       return generated.error?{error:"Service reactivated. Refresh recurring work to generate tasks."}:{success:"Service reactivated."};
@@ -77,7 +83,9 @@ export async function addClientService(_: WorkState,form:FormData):Promise<WorkS
       p_organization_id:organization.id,p_client_id:parsed.data.client_id,
       p_service_template_id:template.id,p_assignees:[]
     });
-    if(connectError)return {error:"Unable to add this service. Check permissions or try again."};
+    if(connectError)return {error:isSeoConflict(connectError)
+      ? "Pause the other SEO package first. Only one SEO package can be active."
+      : "Unable to add this service. Check permissions or try again."};
     revalidatePath("/","layout");
     return {success:"Service added. New deliverables are unassigned until you assign teammates."};
   }catch(e){return {error:e instanceof Error?e.message:"Unable to add service."};}
